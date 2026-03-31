@@ -186,8 +186,9 @@ def test_production_segmentation_stage_emits_bundle_backed_payload(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta
+            del continue_prediction, disable_tta, tile_step_size
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
             staged_input_dir.mkdir(parents=True, exist_ok=True)
@@ -352,8 +353,9 @@ def test_production_segmentation_stage_allows_cpu_fallback_without_cuda_runtime(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta
+            del continue_prediction, disable_tta, tile_step_size
             observed_devices.append(device)
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
@@ -455,8 +457,9 @@ def test_production_segmentation_stage_only_reports_detected_vertebrae(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta, device
+            del continue_prediction, disable_tta, tile_step_size, device
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
             staged_input_dir.mkdir(parents=True, exist_ok=True)
@@ -586,8 +589,9 @@ def test_production_segmentation_stage_honors_existing_pipeline_run_device_selec
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta
+            del continue_prediction, disable_tta, tile_step_size
             observed_devices.append(device)
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
@@ -699,8 +703,9 @@ def test_active_bundle_switch_changes_gui_production_backend_payload(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta, device
+            del continue_prediction, disable_tta, tile_step_size, device
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
             staged_input_dir.mkdir(parents=True, exist_ok=True)
@@ -813,8 +818,9 @@ def test_production_segmentation_stage_supports_totalsegmentator_bundle(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta, device
+            del continue_prediction, disable_tta, tile_step_size, device
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
             staged_input_dir.mkdir(parents=True, exist_ok=True)
@@ -925,8 +931,9 @@ def test_production_segmentation_stage_supports_skellytour_bundle(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta, device
+            del continue_prediction, disable_tta, tile_step_size, device
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
             staged_input_dir.mkdir(parents=True, exist_ok=True)

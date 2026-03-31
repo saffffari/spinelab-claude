@@ -234,8 +234,9 @@ def test_pipeline_orchestrator_runs_happy_path_with_production_segmentation(
             device: str,
             continue_prediction: bool = False,
             disable_tta: bool = False,
+            tile_step_size: float = 0.5,
         ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta
+            del continue_prediction, disable_tta, tile_step_size
             staged_input_dir = working_dir / "inputs"
             prediction_dir = working_dir / "predictions"
             staged_input_dir.mkdir(parents=True, exist_ok=True)
@@ -323,8 +324,10 @@ def test_pipeline_orchestrator_failed_stage_never_reports_100_percent(
         *,
         progress_callback=None,
         performance_policy=None,
+        disable_tta=False,
+        tile_step_size=0.5,
     ):
-        del current_store, current_manifest, performance_policy
+        del current_store, current_manifest, performance_policy, disable_tta, tile_step_size
         if progress_callback is not None:
             progress_callback(1.0, "Prediction export complete")
         raise RuntimeError("segmentation failed")

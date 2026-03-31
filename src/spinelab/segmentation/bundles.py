@@ -59,12 +59,7 @@ DEFAULT_LABEL_MAPPING = {
     definition.standard_level_id: index + 1
     for index, definition in enumerate(STANDARD_STRUCTURES)
 }
-DEBUG_ONLY_SEGMENTATION_BACKEND_IDS = frozenset(
-    {
-        DEFAULT_FOLD0_BUNDLE_ID,
-        DEFAULT_FOLD1_BUNDLE_ID,
-    }
-)
+DEBUG_ONLY_SEGMENTATION_BACKEND_IDS: frozenset[str] = frozenset()
 PRODUCTION_SEGMENTATION_BACKEND_PRIORITY = (
     DEFAULT_PRODUCTION_BUNDLE_ID,
     "totalsegmentator-baseline",

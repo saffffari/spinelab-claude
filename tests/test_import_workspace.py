@@ -231,7 +231,7 @@ def test_import_actions_are_anchored_in_left_sidebar(qtbot, tmp_path: Path) -> N
         workspace._turbo_mode_button  # pyright: ignore[reportPrivateUsage]
     )
     assert workspace._left_action_card.isAncestorOf(
-        workspace._segmentation_backend_card  # pyright: ignore[reportPrivateUsage]
+        workspace._precision_strip  # pyright: ignore[reportPrivateUsage]
     )
     assert workspace._left_action_card.isAncestorOf(workspace._import_drop_zone) is False  # pyright: ignore[reportPrivateUsage]
     assert workspace._import_drop_zone.height() == GEOMETRY.major_button_height
@@ -259,9 +259,7 @@ def test_import_workspace_defaults_segmentation_profile_to_production(
     qtbot.addWidget(workspace)
 
     assert workspace._manifest.segmentation_profile == SegmentationProfile.PRODUCTION.value
-    assert (  # pyright: ignore[reportPrivateUsage]
-        workspace._segmentation_backend_value_label.text() == "Production (Not Installed)"
-    )
+    assert len(workspace._precision_buttons) == 3  # pyright: ignore[reportPrivateUsage]
     assert hasattr(workspace, "_segmentation_profile_button") is False
 
 
@@ -283,9 +281,6 @@ def test_import_workspace_canonicalizes_unknown_segmentation_profile_to_producti
 
     reloaded = store.load_manifest(manifest.case_id)
     assert reloaded.segmentation_profile == SegmentationProfile.PRODUCTION.value
-    assert (  # pyright: ignore[reportPrivateUsage]
-        workspace._segmentation_backend_value_label.text() == "Production (Not Installed)"
-    )
 
 
 def test_import_workspace_promotes_debug_scaffold_profile_to_production(
@@ -307,9 +302,6 @@ def test_import_workspace_promotes_debug_scaffold_profile_to_production(
     reloaded = store.load_manifest(manifest.case_id)
     assert workspace._manifest.segmentation_profile == SegmentationProfile.PRODUCTION.value
     assert reloaded.segmentation_profile == SegmentationProfile.PRODUCTION.value
-    assert (  # pyright: ignore[reportPrivateUsage]
-        workspace._segmentation_backend_value_label.text() == "Production (Not Installed)"
-    )
 
 
 def test_case_explorer_selection_fill_spans_full_sidebar_width(qtbot) -> None:
@@ -668,6 +660,7 @@ def test_import_workspace_analyze_runs_pipeline_and_notifies(
             self,
             manifest: CaseManifest,
             progress_callback=None,
+            **_kwargs,
         ) -> CaseManifest:
             self.called = True
             if progress_callback is not None:
@@ -760,6 +753,7 @@ def test_import_workspace_keeps_failed_progress_visible_until_next_run(
             self,
             manifest: CaseManifest,
             progress_callback=None,
+            **_kwargs,
         ) -> CaseManifest:
             self.calls += 1
             if self.calls == 1:
@@ -919,6 +913,7 @@ def test_import_workspace_analysis_start_clears_armed_turbo_button(
             self,
             manifest: CaseManifest,
             progress_callback=None,
+            **_kwargs,
         ) -> CaseManifest:
             self.started.set()
             self.release.wait(timeout=1.0)

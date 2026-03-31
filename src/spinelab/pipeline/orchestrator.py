@@ -80,6 +80,8 @@ class PipelineOrchestrator:
         preferred_device: str | None = None,
         requested_stages: tuple[PipelineStageName, ...] | None = None,
         progress_callback: StageProgressCallback | None = None,
+        disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> CaseManifest:
         editable_manifest = self._ensure_editable_manifest(manifest)
         resolved_policy = configure_runtime_policy(settings=self._settings)
@@ -182,6 +184,8 @@ class PipelineOrchestrator:
                         editable_manifest,
                         progress_callback=segmentation_progress_callback,
                         performance_policy=resolved_policy,
+                        disable_tta=disable_tta,
+                        tile_step_size=tile_step_size,
                     )
                 else:
                     result = spec.runner(self._store, editable_manifest)

@@ -50,6 +50,11 @@ from spinelab.segmentation import (
     SegmentationBundleRegistry,
     terminate_tracked_segmentation_processes,
 )
+from spinelab.segmentation.precision import (
+    DEFAULT_PRECISION_TIER,
+    PRECISION_TIER_PARAMS,
+    InferencePrecisionTier,
+)
 from spinelab.segmentation_profiles import DEFAULT_SEGMENTATION_PROFILE
 from spinelab.services import (
     SettingsService,
@@ -168,16 +173,22 @@ class AnalyzeCaseThread(QThread):
         *,
         pipeline: PipelineOrchestrator,
         manifest: CaseManifest,
+        disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> None:
         super().__init__()
         self._pipeline = pipeline
         self._manifest = manifest
+        self._disable_tta = disable_tta
+        self._tile_step_size = tile_step_size
 
     def run(self) -> None:
         try:
             updated_manifest = self._pipeline.submit_case_analysis(
                 self._manifest,
                 progress_callback=self._handle_progress,
+                disable_tta=self._disable_tta,
+                tile_step_size=self._tile_step_size,
             )
         except Exception as exc:
             if self.isInterruptionRequested():
@@ -813,9 +824,10 @@ class ImportWorkspace(WorkspacePage):
             self._comparison_buttons["primary"],
             self._comparison_buttons["secondary"],
         )
-        self._segmentation_backend_card = QFrame()
-        self._segmentation_backend_kicker = QLabel("SEGMENTATION BACKEND")
-        self._segmentation_backend_value_label = QLabel("")
+        self._precision_kicker = QLabel("INFERENCE PRECISION")
+        self._precision_strip = QWidget()
+        self._precision_buttons: dict[InferencePrecisionTier, CapsuleButton] = {}
+        self._active_precision_tier = DEFAULT_PRECISION_TIER
         self._turbo_mode_button = TurboModeButton(self._performance_coordinator.active_mode)
         self._analyze_button = AnalyzeProgressButton("Analyze")
         self._enforce_operator_segmentation_profile()
@@ -917,31 +929,29 @@ class ImportWorkspace(WorkspacePage):
         self._comparison_selector_strip.setObjectName("ComparisonSelectorStrip")
         action_layout.addWidget(self._comparison_selector_strip)
 
-        self._segmentation_backend_card.setObjectName("PanelInner")
-        self._segmentation_backend_card.setProperty(
-            "card_role",
-            "segmentation-backend-status",
-        )
-        self._segmentation_backend_card.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
-        )
-        backend_layout = QVBoxLayout(self._segmentation_backend_card)
-        backend_layout.setContentsMargins(
-            GEOMETRY.inspector_padding,
-            GEOMETRY.inspector_padding,
-            GEOMETRY.inspector_padding,
-            GEOMETRY.inspector_padding,
-        )
-        backend_layout.setSpacing(GEOMETRY.unit // 2)
-        self._segmentation_backend_kicker.setObjectName("SegmentationBackendKicker")
-        apply_text_role(self._segmentation_backend_kicker, "micro")
-        backend_layout.addWidget(self._segmentation_backend_kicker)
-        self._segmentation_backend_value_label.setObjectName("SegmentationBackendValue")
-        self._segmentation_backend_value_label.setWordWrap(True)
-        apply_text_role(self._segmentation_backend_value_label, "body")
-        backend_layout.addWidget(self._segmentation_backend_value_label)
-        action_layout.addWidget(self._segmentation_backend_card)
+        self._precision_kicker.setObjectName("InferencePrecisionKicker")
+        apply_text_role(self._precision_kicker, "micro")
+        action_layout.addWidget(self._precision_kicker)
+
+        _tier_variants = {
+            InferencePrecisionTier.DRAFT: "warning",
+            InferencePrecisionTier.STANDARD: "info",
+            InferencePrecisionTier.QUALITY: "success",
+        }
+        precision_layout = QHBoxLayout(self._precision_strip)
+        precision_layout.setContentsMargins(0, 0, 0, 0)
+        precision_layout.setSpacing(GEOMETRY.unit // 2)
+        for tier in InferencePrecisionTier:
+            btn = CapsuleButton(
+                tier.value.title(),
+                variant=_tier_variants.get(tier, "ghost"),
+                checkable=True,
+            )
+            btn.setChecked(tier == self._active_precision_tier)
+            btn.clicked.connect(lambda _checked, t=tier: self._handle_precision_tier_clicked(t))
+            precision_layout.addWidget(btn)
+            self._precision_buttons[tier] = btn
+        action_layout.addWidget(self._precision_strip)
 
         action_layout.addWidget(self._turbo_mode_button)
 
@@ -1206,7 +1216,6 @@ class ImportWorkspace(WorkspacePage):
         self._refresh_inspector()
         self._refresh_analysis_cards()
         self._refresh_comparison_buttons()
-        self._refresh_segmentation_backend_status()
         self._refresh_performance_mode_widget()
 
     def dispose(self) -> None:
@@ -1438,19 +1447,10 @@ class ImportWorkspace(WorkspacePage):
         if self._store.case_is_editable(self._manifest.case_id):
             self._store.save_manifest(self._manifest)
 
-    def _refresh_segmentation_backend_status(self) -> None:
-        self._enforce_operator_segmentation_profile()
-        registry = SegmentationBundleRegistry(self._store, self._workspace_settings)
-        label, _variant = registry.production_status()
-        tooltip = (
-            "Analyze always uses the active installed segmentation backend on this "
-            "machine. Backend switching is a dev installation step, not an operator "
-            "workflow choice."
-        )
-        self._segmentation_backend_value_label.setText(label)
-        self._segmentation_backend_card.setToolTip(tooltip)
-        self._segmentation_backend_value_label.setToolTip(tooltip)
-        refresh_widget_style(self._segmentation_backend_card)
+    def _handle_precision_tier_clicked(self, tier: InferencePrecisionTier) -> None:
+        self._active_precision_tier = tier
+        for t, btn in self._precision_buttons.items():
+            btn.setChecked(t == tier)
 
     def _refresh_performance_mode_widget(self) -> None:
         self._turbo_mode_button.set_mode(self._performance_coordinator.active_mode)
@@ -1710,12 +1710,18 @@ class ImportWorkspace(WorkspacePage):
         ):
             return
         self._enforce_operator_segmentation_profile()
-        self._refresh_segmentation_backend_status()
+        params = PRECISION_TIER_PARAMS[self._active_precision_tier]
         self._analysis_failed = False
         self._analysis_progress_percent = 0.0
         self._analyze_button.set_progress_percent(0, active=True, spinner_active=True)
         self._notify_analysis_status("Preparing analysis", True)
-        thread = AnalyzeCaseThread(pipeline=self._pipeline, manifest=self._manifest)
+        self._precision_strip.setEnabled(False)
+        thread = AnalyzeCaseThread(
+            pipeline=self._pipeline,
+            manifest=self._manifest,
+            disable_tta=params.disable_tta,
+            tile_step_size=params.tile_step_size,
+        )
         self._analysis_thread = thread
         self._refresh_performance_mode_widget()
         self._refresh_comparison_buttons()
@@ -1758,6 +1764,7 @@ class ImportWorkspace(WorkspacePage):
 
     def _handle_analysis_thread_finished(self) -> None:
         self._analysis_thread = None
+        self._precision_strip.setEnabled(True)
         self._refresh_performance_mode_widget()
         self._refresh_comparison_buttons()
         if not self._analysis_failed:

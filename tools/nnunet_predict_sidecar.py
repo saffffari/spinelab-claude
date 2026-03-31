@@ -38,6 +38,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--disable_tta", action="store_true")
     parser.add_argument("--continue_prediction", action="store_true")
+    parser.add_argument("--tile_step_size", type=float, default=0.5)
     return parser.parse_args(argv)
 
 
@@ -406,6 +407,7 @@ def main(argv: list[str] | None = None) -> int:
     from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 
     predictor = nnUNetPredictor(
+        tile_step_size=args.tile_step_size,
         use_mirroring=not args.disable_tta,
         perform_everything_on_device=args.device == "cuda",
         device=torch.device(args.device),

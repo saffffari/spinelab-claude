@@ -526,6 +526,8 @@ def _run_production_segmentation(
     *,
     performance_policy: ResolvedPerformancePolicy | None = None,
     progress_callback: SegmentationProgressCallback | None = None,
+    disable_tta: bool = False,
+    tile_step_size: float = 0.5,
 ) -> StageExecutionResult:
     _emit_segmentation_progress(
         progress_callback,
@@ -580,6 +582,8 @@ def _run_production_segmentation(
             runtime_model,
             working_root / "predict",
             device=runtime_device,
+            disable_tta=disable_tta,
+            tile_step_size=tile_step_size,
         )
     prediction_elapsed = time.perf_counter() - prediction_started_at
     prediction_output = prediction_result.outputs[0]
@@ -696,6 +700,8 @@ def run_segmentation_stage(
     *,
     performance_policy: ResolvedPerformancePolicy | None = None,
     progress_callback: SegmentationProgressCallback | None = None,
+    disable_tta: bool = False,
+    tile_step_size: float = 0.5,
 ) -> StageExecutionResult:
     volume = primary_ct_volume(manifest)
     if volume is None or volume.modality != "ct":
@@ -716,4 +722,6 @@ def run_segmentation_stage(
         volume,
         performance_policy=performance_policy,
         progress_callback=progress_callback,
+        disable_tta=disable_tta,
+        tile_step_size=tile_step_size,
     )

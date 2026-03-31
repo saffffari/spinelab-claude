@@ -327,6 +327,7 @@ class SegmentationModelDriver(Protocol):
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult: ...
 
     def predict_batch(
@@ -338,6 +339,7 @@ class SegmentationModelDriver(Protocol):
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult: ...
 
 
@@ -357,6 +359,7 @@ class NNUNetV2SegmentationDriver:
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult:
         return self.predict_batch(
             (normalized_volume_path,),
@@ -365,6 +368,7 @@ class NNUNetV2SegmentationDriver:
             device=device,
             continue_prediction=continue_prediction,
             disable_tta=disable_tta,
+            tile_step_size=tile_step_size,
         )
 
     def predict_batch(
@@ -376,6 +380,7 @@ class NNUNetV2SegmentationDriver:
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult:
         if runtime_model.driver_id != self.driver_id:
             raise SegmentationDriverError(
@@ -492,6 +497,8 @@ class NNUNetV2SegmentationDriver:
             command_list.append("--disable_tta")
         if continue_prediction:
             command_list.append("--continue_prediction")
+        if tile_step_size != 0.5:
+            command_list.extend(["--tile_step_size", str(tile_step_size)])
         environment = os.environ.copy()
         environment["nnUNet_results"] = str(runtime_model.runtime_results_root)
         environment["nnUNet_raw"] = str(runtime_model.runtime_raw_root)
@@ -556,6 +563,7 @@ class TotalSegmentatorSegmentationDriver:
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult:
         return self.predict_batch(
             (normalized_volume_path,),
@@ -564,6 +572,7 @@ class TotalSegmentatorSegmentationDriver:
             device=device,
             continue_prediction=continue_prediction,
             disable_tta=disable_tta,
+            tile_step_size=tile_step_size,
         )
 
     def predict_batch(
@@ -575,8 +584,9 @@ class TotalSegmentatorSegmentationDriver:
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult:
-        del disable_tta
+        del disable_tta, tile_step_size
         if runtime_model.driver_id != self.driver_id:
             raise SegmentationDriverError(
                 f"Runtime model {runtime_model.model_id} uses driver {runtime_model.driver_id!r}, "
@@ -737,6 +747,7 @@ class SkellyTourSegmentationDriver:
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult:
         return self.predict_batch(
             (normalized_volume_path,),
@@ -745,6 +756,7 @@ class SkellyTourSegmentationDriver:
             device=device,
             continue_prediction=continue_prediction,
             disable_tta=disable_tta,
+            tile_step_size=tile_step_size,
         )
 
     def predict_batch(
@@ -756,8 +768,9 @@ class SkellyTourSegmentationDriver:
         device: str,
         continue_prediction: bool = False,
         disable_tta: bool = False,
+        tile_step_size: float = 0.5,
     ) -> PredictionBatchResult:
-        del disable_tta
+        del disable_tta, tile_step_size
         if runtime_model.driver_id != self.driver_id:
             raise SegmentationDriverError(
                 f"Runtime model {runtime_model.model_id} uses driver {runtime_model.driver_id!r}, "
