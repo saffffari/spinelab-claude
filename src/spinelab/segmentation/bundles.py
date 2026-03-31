@@ -7,7 +7,6 @@ import shutil
 import subprocess
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from importlib import metadata as importlib_metadata
 from pathlib import Path
 
 from spinelab.io import CaseStore
@@ -26,22 +25,7 @@ DEFAULT_FOLD0_DISPLAY_NAME = "VERSe20 ResEnc Fold 0"
 DEFAULT_FOLD1_BUNDLE_ID = "verse20-resenc-fold1"
 DEFAULT_FOLD1_DISPLAY_NAME = "VERSe20 ResEnc Fold 1"
 DEFAULT_BUNDLE_MODALITY = "ct"
-DEFAULT_PRODUCTION_BUNDLE_ID = "skellytour"
-DEFAULT_TOTALSEGMENTATOR_FAMILY = "totalsegmentator-baseline"
-DEFAULT_TOTALSEGMENTATOR_ENVIRONMENT_ID = "totalsegmentator-win"
-DEFAULT_TOTALSEGMENTATOR_DRIVER_ID = "totalsegmentator"
-DEFAULT_TOTALSEGMENTATOR_DISPLAY_NAME = "TotalSegmentator Baseline"
-DEFAULT_TOTALSEGMENTATOR_RUNTIME_ROOT = "totalsegmentator-runtime"
-DEFAULT_TOTALSEGMENTATOR_TASK = "total"
-DEFAULT_TOTALSEGMENTATOR_ROI_SUBSET = tuple(
-    f"vertebrae_{definition.standard_level_id}" for definition in STANDARD_STRUCTURES
-)
-DEFAULT_SKELLYTOUR_FAMILY = "skellytour-high"
-DEFAULT_SKELLYTOUR_ENVIRONMENT_ID = "skellytour-win"
-DEFAULT_SKELLYTOUR_DRIVER_ID = "skellytour"
-DEFAULT_SKELLYTOUR_DISPLAY_NAME = "SkellyTour High"
-DEFAULT_SKELLYTOUR_RUNTIME_ROOT = "skellytour-runtime"
-DEFAULT_SKELLYTOUR_MODEL = "high"
+DEFAULT_PRODUCTION_BUNDLE_ID = DEFAULT_FOLD0_BUNDLE_ID
 DEBUG_SEGMENTATION_BUNDLES_ENV_VAR = "SPINELAB_ENABLE_DEBUG_SEGMENTATION_BUNDLES"
 BUNDLE_MANIFEST_NAME = "bundle.json"
 DEFAULT_DISPLAY_NAME = "VERSe20 ResEnc Production"
@@ -62,7 +46,6 @@ DEFAULT_LABEL_MAPPING = {
 DEBUG_ONLY_SEGMENTATION_BACKEND_IDS: frozenset[str] = frozenset()
 PRODUCTION_SEGMENTATION_BACKEND_PRIORITY = (
     DEFAULT_PRODUCTION_BUNDLE_ID,
-    "totalsegmentator-baseline",
 )
 
 
@@ -158,16 +141,6 @@ def _resolve_environment_executable(
     return None
 
 
-def _resolve_totalsegmentator_executable() -> str | None:
-    return _resolve_environment_executable(
-        environment_id=DEFAULT_TOTALSEGMENTATOR_ENVIRONMENT_ID,
-        executable_names=(
-            "TotalSegmentator",
-            "totalsegmentator",
-        ),
-    )
-
-
 def _detect_package_version_from_environment(
     *,
     environment_id: str,
@@ -209,37 +182,6 @@ def _detect_package_version_from_environment(
     return version or "unknown"
 
 
-def _detect_totalsegmentator_version() -> str:
-    for package_name in ("TotalSegmentator", "totalsegmentator"):
-        try:
-            return str(importlib_metadata.version(package_name))
-        except importlib_metadata.PackageNotFoundError:
-            continue
-    return _detect_package_version_from_environment(
-        environment_id=DEFAULT_TOTALSEGMENTATOR_ENVIRONMENT_ID,
-        package_names=("TotalSegmentator", "totalsegmentator"),
-    )
-
-
-def _resolve_skellytour_executable() -> str | None:
-    return _resolve_environment_executable(
-        environment_id=DEFAULT_SKELLYTOUR_ENVIRONMENT_ID,
-        executable_names=("skellytour",),
-    )
-
-
-def _detect_skellytour_version() -> str:
-    for package_name in ("skellytour", "Skellytour"):
-        try:
-            return str(importlib_metadata.version(package_name))
-        except importlib_metadata.PackageNotFoundError:
-            continue
-    return _detect_package_version_from_environment(
-        environment_id=DEFAULT_SKELLYTOUR_ENVIRONMENT_ID,
-        package_names=("skellytour", "Skellytour"),
-    )
-
-
 @dataclass(frozen=True, slots=True)
 class KnownSegmentationBackend:
     backend_id: str
@@ -267,26 +209,6 @@ KNOWN_SEGMENTATION_BACKENDS = (
         driver_id=DEFAULT_NNUNET_DRIVER_ID,
         environment_id=DEFAULT_NNUNET_ENVIRONMENT_ID,
         description="Local VERSe20 residual-encoder fold 1 bundle.",
-    ),
-    KnownSegmentationBackend(
-        backend_id="totalsegmentator-baseline",
-        display_name=DEFAULT_TOTALSEGMENTATOR_DISPLAY_NAME,
-        family=DEFAULT_TOTALSEGMENTATOR_FAMILY,
-        driver_id=DEFAULT_TOTALSEGMENTATOR_DRIVER_ID,
-        environment_id=DEFAULT_TOTALSEGMENTATOR_ENVIRONMENT_ID,
-        description=(
-            "TotalSegmentator baseline used for qualitative vertebra-only comparison."
-        ),
-    ),
-    KnownSegmentationBackend(
-        backend_id="skellytour",
-        display_name=DEFAULT_SKELLYTOUR_DISPLAY_NAME,
-        family=DEFAULT_SKELLYTOUR_FAMILY,
-        driver_id=DEFAULT_SKELLYTOUR_DRIVER_ID,
-        environment_id=DEFAULT_SKELLYTOUR_ENVIRONMENT_ID,
-        description=(
-            "SkellyTour high-label CT baseline remapped into the canonical vertebra contract."
-        ),
     ),
 )
 
@@ -650,12 +572,12 @@ class SegmentationBundleRegistry:
         if bundle_id and is_debug_only_bundle_id(bundle_id) and not debug_enabled:
             raise RuntimeError(
                 "The configured segmentation bundle is quarantined for debug-only use. "
-                "Activate SkellyTour or TotalSegmentator for the normal Analyze path, or "
-                f"set {DEBUG_SEGMENTATION_BUNDLES_ENV_VAR}=1 for explicit nnU-Net debug runs."
+                "Activate an nnU-Net production bundle for the normal Analyze path, or "
+                f"set {DEBUG_SEGMENTATION_BUNDLES_ENV_VAR}=1 for explicit debug runs."
             )
         raise RuntimeError(
             "No active production segmentation bundle is configured. "
-            "Install and activate SkellyTour or TotalSegmentator with "
+            "Install and activate an nnU-Net bundle with "
             "tools/manage_segmentation_backends.py or tools/install_segmentation_bundle.py."
         )
 
@@ -795,16 +717,6 @@ def identify_known_backend_id(
     if canonical_bundle_id is not None:
         return canonical_bundle_id
 
-    if (
-        bundle.driver_id == DEFAULT_TOTALSEGMENTATOR_DRIVER_ID
-        or bundle.family == DEFAULT_TOTALSEGMENTATOR_FAMILY
-    ):
-        return "totalsegmentator-baseline"
-    if (
-        bundle.driver_id == DEFAULT_SKELLYTOUR_DRIVER_ID
-        or bundle.family == DEFAULT_SKELLYTOUR_FAMILY
-    ):
-        return "skellytour"
     if (
         bundle.driver_id != DEFAULT_NNUNET_DRIVER_ID
         or bundle.family != DEFAULT_NNUNET_FAMILY
@@ -977,192 +889,6 @@ def install_nnunet_bundle(
     return bundle
 
 
-def install_totalsegmentator_bundle(
-    *,
-    store: CaseStore,
-    bundle_id: str,
-    display_name: str = DEFAULT_TOTALSEGMENTATOR_DISPLAY_NAME,
-    activate: bool = False,
-    settings: SettingsService | None = None,
-    family: str = DEFAULT_TOTALSEGMENTATOR_FAMILY,
-    environment_id: str = DEFAULT_TOTALSEGMENTATOR_ENVIRONMENT_ID,
-    driver_id: str = DEFAULT_TOTALSEGMENTATOR_DRIVER_ID,
-    modality: str = DEFAULT_BUNDLE_MODALITY,
-    runtime_root: str = DEFAULT_TOTALSEGMENTATOR_RUNTIME_ROOT,
-    task: str = DEFAULT_TOTALSEGMENTATOR_TASK,
-    roi_subset: tuple[str, ...] = DEFAULT_TOTALSEGMENTATOR_ROI_SUBSET,
-) -> InstalledSegmentationBundle:
-    sanitized_bundle_id = _normalize_bundle_id(bundle_id)
-    if not sanitized_bundle_id:
-        raise ValueError("Bundle id must contain at least one alphanumeric character.")
-
-    executable = _resolve_totalsegmentator_executable()
-    if executable is None:
-        raise FileNotFoundError(
-            "Unable to locate the TotalSegmentator runtime in the configured "
-            "environment. Install it before creating the baseline bundle."
-        )
-
-    registry = SegmentationBundleRegistry(store, settings=settings)
-    registry.ensure_root()
-    target_bundle_dir = registry.bundle_dir(sanitized_bundle_id)
-    if target_bundle_dir.exists():
-        raise FileExistsError(f"Segmentation bundle already exists: {sanitized_bundle_id}")
-
-    runtime_dir = target_bundle_dir / runtime_root
-    runtime_dir.mkdir(parents=True, exist_ok=True)
-    metadata_path = runtime_dir / "totalsegmentator-model.txt"
-    version = _detect_totalsegmentator_version()
-    metadata_path.write_text(
-        "\n".join(
-            (
-                f"bundle_id={sanitized_bundle_id}",
-                f"driver_id={driver_id}",
-                f"task={task}",
-                f"version={version}",
-                f"executable={executable}",
-                f"roi_subset={','.join(roi_subset)}",
-            )
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-
-    checkpoint = SegmentationBundleCheckpoint(
-        checkpoint_id=f"totalsegmentator-{version}",
-        fold="baseline",
-        checkpoint_name=f"totalsegmentator-{version}",
-        relative_path=str(metadata_path.relative_to(target_bundle_dir)),
-    )
-    bundle = InstalledSegmentationBundle(
-        bundle_id=sanitized_bundle_id,
-        family=family,
-        display_name=display_name,
-        environment_id=environment_id,
-        driver_id=driver_id,
-        modality=modality,
-        inference_spec=SegmentationBundleInferenceSpec(
-            dataset_id=0,
-            dataset_name="TotalSegmentator",
-            trainer_name="TotalSegmentator",
-            plan_name=task,
-            configuration="baseline",
-        ),
-        checkpoints=(checkpoint,),
-        active_checkpoint_id=checkpoint.checkpoint_id,
-        label_mapping=dict(DEFAULT_LABEL_MAPPING),
-        provenance={
-            "installed_at_utc": utc_now(),
-            "installer": "tools/manage_segmentation_backends.py",
-            "task": task,
-            "roi_subset": ",".join(roi_subset),
-            "totalsegmentator_version": version,
-            "executable": executable,
-        },
-        runtime_root=runtime_root,
-        bundle_dir=target_bundle_dir,
-    )
-    target_bundle_dir.mkdir(parents=True, exist_ok=True)
-    bundle.manifest_path.write_text(json.dumps(bundle.to_dict(), indent=2), encoding="utf-8")
-
-    if activate:
-        registry.set_active_bundle_id(bundle.bundle_id)
-
-    return bundle
-
-
-def install_skellytour_bundle(
-    *,
-    store: CaseStore,
-    bundle_id: str,
-    display_name: str = DEFAULT_SKELLYTOUR_DISPLAY_NAME,
-    activate: bool = False,
-    settings: SettingsService | None = None,
-    family: str = DEFAULT_SKELLYTOUR_FAMILY,
-    environment_id: str = DEFAULT_SKELLYTOUR_ENVIRONMENT_ID,
-    driver_id: str = DEFAULT_SKELLYTOUR_DRIVER_ID,
-    modality: str = DEFAULT_BUNDLE_MODALITY,
-    runtime_root: str = DEFAULT_SKELLYTOUR_RUNTIME_ROOT,
-    model_name: str = DEFAULT_SKELLYTOUR_MODEL,
-) -> InstalledSegmentationBundle:
-    sanitized_bundle_id = _normalize_bundle_id(bundle_id)
-    if not sanitized_bundle_id:
-        raise ValueError("Bundle id must contain at least one alphanumeric character.")
-
-    executable = _resolve_skellytour_executable()
-    if executable is None:
-        raise FileNotFoundError(
-            "Unable to locate the SkellyTour runtime command in the configured "
-            "environment. Install the SkellyTour runtime before registering the "
-            "backend."
-        )
-
-    registry = SegmentationBundleRegistry(store, settings=settings)
-    registry.ensure_root()
-    target_bundle_dir = registry.bundle_dir(sanitized_bundle_id)
-    if target_bundle_dir.exists():
-        raise FileExistsError(f"Segmentation bundle already exists: {sanitized_bundle_id}")
-
-    runtime_dir = target_bundle_dir / runtime_root
-    runtime_dir.mkdir(parents=True, exist_ok=True)
-    metadata_path = runtime_dir / "skellytour-model.txt"
-    version = _detect_skellytour_version()
-    metadata_path.write_text(
-        "\n".join(
-            (
-                f"bundle_id={sanitized_bundle_id}",
-                f"driver_id={driver_id}",
-                f"model={model_name}",
-                f"version={version}",
-                f"executable={executable}",
-            )
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-
-    checkpoint = SegmentationBundleCheckpoint(
-        checkpoint_id=f"skellytour-{model_name}-{version}",
-        fold="baseline",
-        checkpoint_name=f"skellytour-{model_name}-{version}",
-        relative_path=str(metadata_path.relative_to(target_bundle_dir)),
-    )
-    bundle = InstalledSegmentationBundle(
-        bundle_id=sanitized_bundle_id,
-        family=family,
-        display_name=display_name,
-        environment_id=environment_id,
-        driver_id=driver_id,
-        modality=modality,
-        inference_spec=SegmentationBundleInferenceSpec(
-            dataset_id=0,
-            dataset_name="SkellyTour",
-            trainer_name="SkellyTour",
-            plan_name=model_name,
-            configuration="baseline",
-        ),
-        checkpoints=(checkpoint,),
-        active_checkpoint_id=checkpoint.checkpoint_id,
-        label_mapping=dict(DEFAULT_LABEL_MAPPING),
-        provenance={
-            "installed_at_utc": utc_now(),
-            "installer": "tools/manage_segmentation_backends.py",
-            "model": model_name,
-            "skellytour_version": version,
-            "executable": executable,
-        },
-        runtime_root=runtime_root,
-        bundle_dir=target_bundle_dir,
-    )
-    target_bundle_dir.mkdir(parents=True, exist_ok=True)
-    bundle.manifest_path.write_text(json.dumps(bundle.to_dict(), indent=2), encoding="utf-8")
-
-    if activate:
-        registry.set_active_bundle_id(bundle.bundle_id)
-
-    return bundle
-
-
 def install_known_segmentation_backend(
     *,
     store: CaseStore,
@@ -1198,30 +924,6 @@ def install_known_segmentation_backend(
                 source_results_root=source_results_root,
                 fold="1",
             ),
-            display_name=backend.display_name,
-            activate=activate,
-            settings=settings,
-            family=backend.family,
-            environment_id=backend.environment_id,
-            driver_id=backend.driver_id,
-            modality=backend.modality,
-        )
-    if backend.backend_id == "totalsegmentator-baseline":
-        return install_totalsegmentator_bundle(
-            store=store,
-            bundle_id=backend.backend_id,
-            display_name=backend.display_name,
-            activate=activate,
-            settings=settings,
-            family=backend.family,
-            environment_id=backend.environment_id,
-            driver_id=backend.driver_id,
-            modality=backend.modality,
-        )
-    if backend.backend_id == "skellytour":
-        return install_skellytour_bundle(
-            store=store,
-            bundle_id=backend.backend_id,
             display_name=backend.display_name,
             activate=activate,
             settings=settings,

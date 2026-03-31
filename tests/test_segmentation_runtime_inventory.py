@@ -22,6 +22,4 @@ def test_pipeline_backend_directory_exposes_only_current_adapters() -> None:
         "nanodrr",
         "nnunet",
         "polypose",
-        "skellytour",
-        "totalsegmentator",
     }

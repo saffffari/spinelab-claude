@@ -2,7 +2,6 @@ from pathlib import Path
 
 from PySide6.QtCore import QSettings
 
-import spinelab.segmentation.bundles as bundles_module
 from spinelab.io import CaseStore
 from spinelab.segmentation import (
     DEBUG_SEGMENTATION_BUNDLES_ENV_VAR,
@@ -11,8 +10,6 @@ from spinelab.segmentation import (
     SegmentationBundleRegistry,
     install_known_segmentation_backend,
     install_nnunet_bundle,
-    install_skellytour_bundle,
-    install_totalsegmentator_bundle,
 )
 from spinelab.services import SettingsService
 
@@ -133,112 +130,6 @@ def test_active_bundle_persists_across_registry_instances(
     reloaded_registry = SegmentationBundleRegistry(store, settings=settings)
 
     assert reloaded_registry.resolve_active_bundle().bundle_id == fold1_bundle.bundle_id
-
-
-def test_registry_defaults_to_skellytour_when_debug_bundles_are_quarantined(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    store = CaseStore(tmp_path / "data-root")
-    settings = _settings_service(tmp_path)
-    trainer_root = _write_fake_trainer_root(tmp_path)
-    monkeypatch.setattr(
-        bundles_module,
-        "_resolve_skellytour_executable",
-        lambda: r"C:\tools\skellytour.exe",
-    )
-    monkeypatch.setattr(
-        bundles_module,
-        "_detect_skellytour_version",
-        lambda: "0.0.2",
-    )
-
-    fold0_bundle = install_nnunet_bundle(
-        store=store,
-        source_results_root=trainer_root,
-        bundle_id="VERSE20 ResEnc Fold 0",
-        active_checkpoint_id="fold-0:checkpoint_final",
-        settings=settings,
-        activate=True,
-    )
-    skellytour_bundle = install_skellytour_bundle(
-        store=store,
-        bundle_id="SkellyTour",
-        settings=settings,
-        activate=False,
-    )
-    registry = SegmentationBundleRegistry(store, settings=settings)
-
-    assert settings.load_active_segmentation_bundle_id() == fold0_bundle.bundle_id
-    assert registry.resolve_active_bundle().bundle_id == fold0_bundle.bundle_id
-
-
-def test_install_totalsegmentator_bundle_writes_runtime_metadata(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    store = CaseStore(tmp_path / "data-root")
-    settings = _settings_service(tmp_path)
-    monkeypatch.setattr(
-        bundles_module,
-        "_resolve_totalsegmentator_executable",
-        lambda: r"C:\tools\TotalSegmentator.exe",
-    )
-    monkeypatch.setattr(
-        bundles_module,
-        "_detect_totalsegmentator_version",
-        lambda: "2.12.0",
-    )
-
-    bundle = install_totalsegmentator_bundle(
-        store=store,
-        bundle_id="TotalSegmentator Baseline",
-        settings=settings,
-        activate=True,
-    )
-    registry = SegmentationBundleRegistry(store, settings=settings)
-    runtime_model = registry.resolve_active_bundle().active_runtime_model()
-
-    assert bundle.bundle_id == "totalsegmentator-baseline"
-    assert bundle.driver_id == "totalsegmentator"
-    assert bundle.active_checkpoint_id == "totalsegmentator-2.12.0"
-    assert runtime_model.checkpoint_path.exists() is True
-    assert "roi_subset=" in runtime_model.checkpoint_path.read_text(encoding="utf-8")
-
-
-def test_install_skellytour_bundle_writes_runtime_metadata(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    store = CaseStore(tmp_path / "data-root")
-    settings = _settings_service(tmp_path)
-    monkeypatch.setattr(
-        bundles_module,
-        "_resolve_skellytour_executable",
-        lambda: r"C:\tools\skellytour.exe",
-    )
-    monkeypatch.setattr(
-        bundles_module,
-        "_detect_skellytour_version",
-        lambda: "0.0.2",
-    )
-
-    bundle = install_skellytour_bundle(
-        store=store,
-        bundle_id="SkellyTour",
-        settings=settings,
-        activate=True,
-    )
-    registry = SegmentationBundleRegistry(store, settings=settings)
-    runtime_model = registry.resolve_active_bundle().active_runtime_model()
-
-    assert bundle.bundle_id == "skellytour"
-    assert bundle.driver_id == "skellytour"
-    assert bundle.active_checkpoint_id == "skellytour-high-0.0.2"
-    assert runtime_model.checkpoint_path.exists() is True
-    metadata = runtime_model.checkpoint_path.read_text(encoding="utf-8")
-    assert "model=high" in metadata
-    assert "executable=C:\\tools\\skellytour.exe" in metadata
 
 
 def test_install_known_segmentation_backend_selects_expected_fold_checkpoint(

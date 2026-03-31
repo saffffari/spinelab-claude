@@ -16,23 +16,9 @@ from spinelab.pipeline.backends.polypose import (
 from spinelab.pipeline.backends.polypose import (
     PolyPoseAdapter,
 )
-from spinelab.pipeline.backends.skellytour import (
-    ENVIRONMENT as SKELLYTOUR_ENVIRONMENT,
-)
-from spinelab.pipeline.backends.skellytour import (
-    SkellyTourAdapter,
-)
-from spinelab.pipeline.backends.totalsegmentator import (
-    ENVIRONMENT as TOTALSEGMENTATOR_ENVIRONMENT,
-)
-from spinelab.pipeline.backends.totalsegmentator import (
-    TotalSegmentatorAdapter,
-)
 
 BACKEND_ADAPTERS = (
     NnUNetV2Adapter(),
-    TotalSegmentatorAdapter(),
-    SkellyTourAdapter(),
     NanoDrrAdapter(),
     PolyPoseAdapter(),
     LandmarkPointTransformerAdapter(),
@@ -40,8 +26,6 @@ BACKEND_ADAPTERS = (
 
 ENVIRONMENT_SPECS = (
     NNUNET_ENVIRONMENT,
-    TOTALSEGMENTATOR_ENVIRONMENT,
-    SKELLYTOUR_ENVIRONMENT,
     NANODRR_ENVIRONMENT,
     POLYPOSE_ENVIRONMENT,
     LANDMARKPT_ENVIRONMENT,
