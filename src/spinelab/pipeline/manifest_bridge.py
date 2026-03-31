@@ -5,6 +5,7 @@ from spinelab.pipeline.contracts import PipelineStageName, StageExecutionResult
 from spinelab.pipeline.stages.common import generated_asset_prefix
 
 _GENERATED_ASSET_LABELS: dict[str, tuple[str, str]] = {
+    "point-cloud-data": ("point_cloud", "Point Cloud"),
     "mesh-baseline": ("mesh_3d", "Model"),
     "registration-scene": ("mesh_3d", "Standing Model"),
 }

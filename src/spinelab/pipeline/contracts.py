@@ -23,7 +23,8 @@ class PipelineStageName(StrEnum):
     INGEST = "ingest"
     NORMALIZE = "normalize"
     SEGMENTATION = "segmentation"
-    MESH = "mesh"
+    POINT_CLOUD = "point-cloud"
+    MESH = "mesh"  # Deprecated: use POINT_CLOUD for the analytical pipeline
     LANDMARKS = "landmarks"
     REGISTRATION = "registration"
     MEASUREMENTS = "measurements"

@@ -2472,10 +2472,10 @@ def load_prepared_scene_models(
             or model_payload.get("vertebra_id")
             or ""
         ).upper()
-        mesh_path = model_payload.get("mesh_path")
+        mesh_path = model_payload.get("mesh_path") or ""
         center_mm = model_payload.get("center_mm")
         extents_mm = model_payload.get("extents_mm")
-        if not vertebra_id or not isinstance(mesh_path, str) or not mesh_path:
+        if not vertebra_id:
             continue
         if not isinstance(center_mm, list) or len(center_mm) != 3:
             continue
@@ -2707,7 +2707,7 @@ def collect_export_artifact_sources(manifest: CaseManifest) -> dict[str, Path]:
     artifact_types = (
         "normalized-volume",
         "segmentation",
-        "mesh-manifest",
+        "point-cloud-manifest",
         "registration",
         "registration-scene",
         "measurements",

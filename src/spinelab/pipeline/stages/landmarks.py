@@ -160,9 +160,9 @@ def _detected_standard_vertebrae(
 
 
 def run_landmarks_stage(store: CaseStore, manifest: CaseManifest) -> StageExecutionResult:
-    mesh_artifact = artifact_for_type(manifest, "mesh-manifest")
-    if mesh_artifact is None:
-        raise ValueError("Landmark derivation requires per-vertebra meshes.")
+    pc_artifact = artifact_for_type(manifest, "point-cloud-manifest")
+    if pc_artifact is None:
+        raise ValueError("Landmark derivation requires a point cloud manifest.")
 
     segmentation_payload = read_json_payload(manifest, "segmentation") or {}
     modality = Modality(str(segmentation_payload.get("modality", Modality.CT.value)).upper())
@@ -255,7 +255,7 @@ def run_landmarks_stage(store: CaseStore, manifest: CaseManifest) -> StageExecut
                     )
                 ),
                 "coordinate_frame": "patient-body-supine",
-                "supporting_artifact_ids": [mesh_artifact.artifact_id],
+                "supporting_artifact_ids": [pc_artifact.artifact_id],
                 "supporting_vertex_groups": list(vertex_groups),
                 "primitives": _landmark_bundle(vertebra.center, vertebra.extents),
             }
@@ -293,7 +293,7 @@ def run_landmarks_stage(store: CaseStore, manifest: CaseManifest) -> StageExecut
         coordinate_frame="vertebra-local",
         review_surface="measurement",
         summary="Dense vertex-group scaffold persisted for PTv3-derived anatomy.",
-        source_artifact_ids=[mesh_artifact.artifact_id],
+        source_artifact_ids=[pc_artifact.artifact_id],
         metadata={"model_name": PTV3_MODEL_NAME, "model_version": PTV3_MODEL_VERSION},
     )
     landmarks_artifact = PipelineArtifact(
@@ -309,7 +309,7 @@ def run_landmarks_stage(store: CaseStore, manifest: CaseManifest) -> StageExecut
             "Landmarks derived from PTv3 vertex groups for downstream "
             "registration and measurements."
         ),
-        source_artifact_ids=[ptv3_artifact.artifact_id, mesh_artifact.artifact_id],
+        source_artifact_ids=[ptv3_artifact.artifact_id, pc_artifact.artifact_id],
         metadata={"vertebra_count": str(len(landmark_vertebrae))},
     )
     return StageExecutionResult(

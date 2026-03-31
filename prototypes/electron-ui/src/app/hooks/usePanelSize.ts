@@ -8,8 +8,8 @@ interface PanelSizes {
 }
 
 const DEFAULT_SIZES: PanelSizes = {
-  leftPanel: 18, // Standard sidebar width
-  rightPanel: 22,
+  leftPanel: 10,
+  rightPanel: 12,
 };
 
 export function usePanelSize() {

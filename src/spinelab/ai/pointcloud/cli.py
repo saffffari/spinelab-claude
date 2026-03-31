@@ -111,7 +111,8 @@ def _structure_context_from_mesh_entry(
 
 
 def run_infer_landmarks(args: argparse.Namespace) -> int:
-    mesh_manifest = _json_load(Path(args.mesh_manifest))
+    manifest_path = args.point_cloud_manifest or args.mesh_manifest
+    mesh_manifest = _json_load(Path(manifest_path))
     provider_name = args.provider
     model = build_model(
         provider_name,
@@ -272,7 +273,8 @@ def build_parser() -> argparse.ArgumentParser:
     build_dataset.set_defaults(func=run_build_dataset)
 
     infer_landmarks = subparsers.add_parser("infer-landmarks", help="Run landmark inference.")
-    infer_landmarks.add_argument("--mesh-manifest", required=True)
+    infer_landmarks.add_argument("--point-cloud-manifest", default=None)
+    infer_landmarks.add_argument("--mesh-manifest", default=None)
     infer_landmarks.add_argument("--output-ptv3", required=True)
     infer_landmarks.add_argument("--output-landmarks", required=True)
     infer_landmarks.add_argument("--provider", default="heuristic")

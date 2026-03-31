@@ -33,7 +33,7 @@ _STAGE_PROGRESS_WEIGHTS: dict[PipelineStageName, float] = {
     PipelineStageName.INGEST: 2.0,
     PipelineStageName.NORMALIZE: 4.0,
     PipelineStageName.SEGMENTATION: 46.0,
-    PipelineStageName.MESH: 16.0,
+    PipelineStageName.POINT_CLOUD: 10.0,
     PipelineStageName.LANDMARKS: 10.0,
     PipelineStageName.REGISTRATION: 8.0,
     PipelineStageName.MEASUREMENTS: 10.0,

@@ -516,7 +516,7 @@ class SpinePackageService:
         transform_artifact_ids = [
             artifact.artifact_id
             for artifact in manifest.artifacts
-            if artifact.stage in {"mesh", "registration"}
+            if artifact.stage in {"point-cloud", "mesh", "registration"}
         ]
         primary_ct = manifest.get_asset_for_role("ct_stack")
         active_pose = (
