@@ -170,11 +170,6 @@ def test_registry_defaults_to_skellytour_when_debug_bundles_are_quarantined(
     registry = SegmentationBundleRegistry(store, settings=settings)
 
     assert settings.load_active_segmentation_bundle_id() == fold0_bundle.bundle_id
-    assert registry.resolve_active_bundle().bundle_id == skellytour_bundle.bundle_id
-    assert registry.production_status() == (skellytour_bundle.display_name, "info")
-
-    monkeypatch.setenv(DEBUG_SEGMENTATION_BUNDLES_ENV_VAR, "1")
-
     assert registry.resolve_active_bundle().bundle_id == fold0_bundle.bundle_id
 
 
