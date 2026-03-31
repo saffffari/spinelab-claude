@@ -85,7 +85,6 @@ def test_nnunet_driver_builds_expected_command_and_env(tmp_path: Path, monkeypat
     assert "--nps" in command and command[command.index("--nps") + 1] == "5"
     assert "--disable_tta" in command
     assert "--continue_prediction" in command
-    assert "--fail_on_oversized_preflight" in command
     assert captured["label"] == "nnunet-sidecar-predict"
     assert result.outputs[0].prediction_path.exists() is True
     assert result.outputs[0].diagnostics_path == result.prediction_dir / "case-001.diagnostics.json"
@@ -152,41 +151,6 @@ def test_nnunet_driver_fails_when_checkpoint_is_missing(tmp_path: Path, monkeypa
     else:
         raise AssertionError("Expected SegmentationDriverError for a missing checkpoint.")
 
-
-def test_nnunet_driver_surfaces_preflight_guard_failures(tmp_path: Path, monkeypatch) -> None:
-    results_root, _checkpoint_path = _write_fake_results_root(tmp_path)
-    runtime_model = build_legacy_nnunet_runtime_model(
-        results_root=results_root,
-        dataset_id=321,
-        dataset_name="VERSE20Vertebrae",
-        trainer_name="nnUNetTrainer",
-        plan_name="nnUNetResEncL_24G",
-        configuration="3d_fullres",
-        fold="0",
-        checkpoint_name="checkpoint_final.pth",
-    )
-    conda_executable = tmp_path / "conda.bat"
-    conda_executable.write_text("@echo off\n", encoding="utf-8")
-    input_path = tmp_path / "case-001.nii.gz"
-    input_path.write_bytes(b"nifti")
-
-    monkeypatch.setenv("CONDA_EXE", str(conda_executable))
-
-    def _fake_run(command, *, stdout, stderr, text, env, check, label):
-        del command, stderr, text, env, check, label
-        stdout.write("guard blocked\n")
-        stdout.flush()
-        return subprocess.CompletedProcess((), drivers_module.NNUNET_PREFLIGHT_GUARD_EXIT_CODE)
-
-    monkeypatch.setattr(drivers_module, "run_tracked_segmentation_subprocess", _fake_run)
-
-    driver = drivers_module.NNUNetV2SegmentationDriver()
-    try:
-        driver.predict(input_path, runtime_model, tmp_path / "job", device="cuda")
-    except SegmentationDriverError as exc:
-        assert "preflight blocked the case" in str(exc)
-    else:
-        raise AssertionError("Expected the nnU-Net preflight guard to surface as an error.")
 
 
 def test_run_tracked_segmentation_subprocess_unregisters_completed_process(

@@ -9,12 +9,6 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-OVERSIZED_PREFLIGHT_EXIT_CODE = 12
-
-
-class OversizedPreflightError(RuntimeError):
-    pass
-
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -44,7 +38,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--disable_tta", action="store_true")
     parser.add_argument("--continue_prediction", action="store_true")
-    parser.add_argument("--fail_on_oversized_preflight", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -273,23 +266,6 @@ def _emit_case_diagnostics(diagnostics: dict[str, object]) -> None:
     print(f"  diagnostics path: {diagnostics['diagnostics_path']}")
 
 
-def _oversized_preflight_reason(diagnostics: dict[str, object]) -> str | None:
-    estimates = diagnostics.get("estimates", {})
-    if not isinstance(estimates, dict):
-        return None
-    if not bool(estimates.get("results_arrays_exceed_total_device_memory")):
-        return None
-    total_bytes = estimates.get("results_arrays_total_bytes_fp16")
-    total_memory_bytes = (
-        diagnostics.get("device", {}).get("total_memory_bytes")
-        if isinstance(diagnostics.get("device"), dict)
-        else None
-    )
-    return (
-        "SpineLab nnU-Net guard blocked this case because the estimated fp16 "
-        f"results arrays ({total_bytes} bytes) exceed total device memory "
-        f"({total_memory_bytes} bytes)."
-    )
 
 
 def _write_prediction_metadata(predictor, args: argparse.Namespace) -> None:
@@ -402,11 +378,6 @@ def _predict_without_export_pool(
             )
             diagnostics_path.write_text(json.dumps(diagnostics, indent=2), encoding="utf-8")
             _emit_case_diagnostics(diagnostics)
-            if args.fail_on_oversized_preflight:
-                oversized_reason = _oversized_preflight_reason(diagnostics)
-                if oversized_reason is not None:
-                    print(oversized_reason)
-                    raise OversizedPreflightError(oversized_reason)
             prediction = predictor.predict_logits_from_preprocessed_data(data).cpu()
 
             print("resampling and exporting prediction in-process")
@@ -446,17 +417,14 @@ def main(argv: list[str] | None = None) -> int:
         checkpoint_name=args.checkpoint,
     )
     _write_prediction_metadata(predictor, args)
-    try:
-        _predict_without_export_pool(
-            predictor,
-            args=args,
-            input_dir=args.input_dir,
-            output_dir=args.output_dir,
-            overwrite=not args.continue_prediction,
-            num_processes_preprocessing=args.npp,
-        )
-    except OversizedPreflightError:
-        return OVERSIZED_PREFLIGHT_EXIT_CODE
+    _predict_without_export_pool(
+        predictor,
+        args=args,
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
+        overwrite=not args.continue_prediction,
+        num_processes_preprocessing=args.npp,
+    )
     return 0
 
 

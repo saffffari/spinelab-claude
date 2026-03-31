@@ -24,7 +24,6 @@ DRIVER_ID_SKELLYTOUR = "skellytour"
 DEFAULT_NNUNET_CONDA_ENV_NAME = "spinelab-nnunet-verse20-win"
 DEFAULT_TOTALSEGMENTATOR_CONDA_ENV_NAME = "totalsegmentator-win"
 DEFAULT_SKELLYTOUR_CONDA_ENV_NAME = "skellytour-win"
-NNUNET_PREFLIGHT_GUARD_EXIT_CODE = 12
 _ENVIRONMENT_ID_TO_CONDA_ENV = {
     "nnunet-verse20-win": DEFAULT_NNUNET_CONDA_ENV_NAME,
     "totalsegmentator-win": DEFAULT_TOTALSEGMENTATOR_CONDA_ENV_NAME,
@@ -493,7 +492,6 @@ class NNUNetV2SegmentationDriver:
             command_list.append("--disable_tta")
         if continue_prediction:
             command_list.append("--continue_prediction")
-        command_list.append("--fail_on_oversized_preflight")
         environment = os.environ.copy()
         environment["nnUNet_results"] = str(runtime_model.runtime_results_root)
         environment["nnUNet_raw"] = str(runtime_model.runtime_raw_root)
@@ -513,13 +511,6 @@ class NNUNetV2SegmentationDriver:
         finished_at_utc = utc_now()
         log_excerpt = _read_log_tail(log_path) if log_path.exists() else ""
         if completed.returncode != 0:
-            if completed.returncode == NNUNET_PREFLIGHT_GUARD_EXIT_CODE:
-                raise SegmentationDriverError(
-                    "nnU-Net sidecar preflight blocked the case before prediction because "
-                    "the estimated full-volume results buffers exceed the configured device "
-                    "budget.\nsidecar_log:\n"
-                    f"{log_path}\noutput_tail:\n{log_excerpt}"
-                )
             raise SegmentationDriverError(
                 "nnU-Net sidecar prediction failed with exit code "
                 f"{completed.returncode}.\nsidecar_log:\n{log_path}\noutput_tail:\n{log_excerpt}"
