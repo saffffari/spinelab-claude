@@ -1,0 +1,27 @@
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+.conda/
+.idea/
+.vscode/
+.DS_Store
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.qt_for_python/
+
+# Repo-local scratch and derived artifacts belong in the annex, not here.
+output/
+.tmp-align-annex/
+.tmp-*/
+runs/
+docs/performance_review_2026-03-25.md

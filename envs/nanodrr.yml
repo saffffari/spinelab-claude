@@ -1,0 +1,11 @@
+name: spinelab-nanodrr
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - torch==2.5.*
+      - nanodrr
+      - "pyvista[all]>=0.47,<0.48"
+      - vtk>=9.6,<9.7

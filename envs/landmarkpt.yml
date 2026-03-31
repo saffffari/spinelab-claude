@@ -1,0 +1,11 @@
+name: spinelab-landmarkpt
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - torch==2.5.*
+      - torch-geometric
+      - flash-attn
+      - spconv-cu124

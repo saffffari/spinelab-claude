@@ -1,0 +1,458 @@
+schema_version: 1.0.0
+project: SpineLab
+title: Vertebral Labeling Ontology and Measurement Dependency Spec
+canonical_source: true
+purpose: Defines the vertebral, sacropelvic, and global landmark schema required to support measurement-ready 3D spine geometry for disc metrics, listhesis, sagittal alignment, coronal deformity analysis, and later degenerative or surgical-planning extensions.
+edit_policy:
+  requires_explicit_user_approval: true
+  notes:
+  - This file is the only canonical imported ontology spec stored in the repo.
+  - Do not maintain JSON, CSV, or README mirrors for this imported package in the repo.
+  - Do not rename runtime ontology ids to match this file without explicit approval.
+implementation_scope:
+  ontology_is_growth_envelope: true
+  full_metric_list_is_not_implementation_commitment: true
+  notes:
+  - Not every listed metric or extension structure needs to be implemented immediately.
+  - The ontology intentionally includes future room for growth beyond the current product slice.
+  - Runtime implementation priority is still governed by docs/project_brief.md and explicit product direction.
+runtime_boundary:
+  runtime_source_of_truth: src/spinelab/ontology/
+  imported_spec_role: measurement-oriented reference layer
+  explicit_approval_required_for_reconciliation: true
+  semantic_mismatches:
+  - imported: vertebral_body_centroid
+    runtime: vertebral_centroid
+  - imported: posterior_vertebral_wall_line
+    runtime: posterior_wall_line
+  - imported: c7_body_center
+    runtime: C7_centroid
+  - imported: hip_axis_midpoint
+    runtime: bicoxofemoral_axis_midpoint
+  - imported: sacral_center_csvl_anchor
+    runtime: sacral_center
+  extension_level_imported_concepts:
+  - mid_sagittal_plane
+  - mid_coronal_plane
+  - upper_end_vertebra
+  - lower_end_vertebra
+  - apical_vertebra
+  - neutral_vertebra
+  - stable_vertebra
+  - anterior_cortex_line
+design_principles:
+- Do not label every tiny vertebral feature; prioritize endplates, vertebral body corners/centers, sacropelvic reference points, and global midline points.
+- 'Represent anatomy as named landmarks plus fitted primitives: points, lines, planes, surfaces, and local coordinate frames.'
+- Separate manual annotation/segmentation targets from computationally derived geometry.
+- Lock each metric to exact landmark inputs, coordinate frame, projection plane, sign convention, units, and fallback behavior.
+layers:
+- name: per_vertebra
+  description: Local vertebral landmarks for disc and segmental measurements.
+- name: pelvic_sacral
+  description: Sacropelvic landmarks for PI/PT/SS and sacral reference logic.
+- name: global_spine
+  description: Whole-spine reference landmarks for SVA, coronal balance, and deformity metrics.
+landmarks:
+  per_vertebra_core:
+  - code: SEP
+    name: superior_endplate
+    geometry_type: plane_or_surface_rim
+    required: true
+    notes: Per vertebra. Primary driver of many angle metrics.
+  - code: IEP
+    name: inferior_endplate
+    geometry_type: plane_or_surface_rim
+    required: true
+    notes: Per vertebra. Primary driver of many angle metrics.
+  - code: ASC
+    name: anterior_superior_corner
+    geometry_type: point
+    required: true
+    notes: Vertebral body corner.
+  - code: PSC
+    name: posterior_superior_corner
+    geometry_type: point
+    required: true
+    notes: Vertebral body corner.
+  - code: AIC
+    name: anterior_inferior_corner
+    geometry_type: point
+    required: true
+    notes: Vertebral body corner.
+  - code: PIC
+    name: posterior_inferior_corner
+    geometry_type: point
+    required: true
+    notes: Vertebral body corner.
+  - code: SEM
+    name: superior_endplate_midpoint
+    geometry_type: point
+    required: false
+    derived: true
+    notes: Derived midpoint of superior endplate.
+  - code: IEM
+    name: inferior_endplate_midpoint
+    geometry_type: point
+    required: false
+    derived: true
+    notes: Derived midpoint of inferior endplate.
+  - code: VBC
+    name: vertebral_body_centroid
+    geometry_type: point
+    required: false
+    derived: true
+    notes: Stable body-center reference.
+  - code: PWL
+    name: posterior_vertebral_wall_line
+    geometry_type: line
+    required: false
+    derived: true
+    notes: Best-fit posterior vertebral body wall.
+  - code: MSP
+    name: mid_sagittal_plane
+    geometry_type: plane
+    required: false
+    derived: true
+    notes: Vertebral local sagittal reference plane.
+  - code: MCP
+    name: mid_coronal_plane
+    geometry_type: plane
+    required: false
+    derived: true
+    notes: Vertebral local coronal reference plane.
+  pelvic_sacral:
+  - code: S1SEP
+    name: s1_superior_endplate
+    geometry_type: plane_or_surface_rim
+    required: true
+    notes: Critical for PI/PT/SS.
+  - code: S1MID
+    name: s1_superior_endplate_midpoint
+    geometry_type: point
+    required: false
+    derived: true
+    notes: Used in PI/PT.
+  - code: S1PSC
+    name: posterior_superior_corner_of_s1
+    geometry_type: point
+    required: true
+    notes: Used in SVA.
+  - code: FH-L
+    name: left_femoral_head_center
+    geometry_type: point
+    required: true
+    notes: Hip axis input.
+  - code: FH-R
+    name: right_femoral_head_center
+    geometry_type: point
+    required: true
+    notes: Hip axis input.
+  - code: HAX
+    name: hip_axis_midpoint
+    geometry_type: point
+    required: false
+    derived: true
+    notes: Midpoint of bilateral femoral head centers.
+  - code: SACC
+    name: sacral_center_csvl_anchor
+    geometry_type: point
+    required: false
+    derived: true
+    notes: Sacral center / CSVL anchor for coronal balance.
+  global_spine:
+  - code: C7C
+    name: c7_body_center
+    geometry_type: point
+    required: true
+    notes: C7 plumb-line origin.
+  - code: EV-U
+    name: upper_end_vertebra
+    geometry_type: vertebra_id
+    required: true
+    notes: For Cobb angle selection.
+  - code: EV-L
+    name: lower_end_vertebra
+    geometry_type: vertebra_id
+    required: true
+    notes: For Cobb angle selection.
+  - code: AV
+    name: apical_vertebra
+    geometry_type: vertebra_id_or_point
+    required: false
+    notes: For scoliosis/apex metrics.
+  - code: NV
+    name: neutral_vertebra
+    geometry_type: vertebra_id
+    required: false
+    notes: Optional deformity planning.
+  - code: SV
+    name: stable_vertebra
+    geometry_type: vertebra_id
+    required: false
+    notes: Optional deformity planning.
+  - code: AC
+    name: anterior_cortex_line
+    geometry_type: line_or_surface_strip
+    required: false
+    notes: Helpful for apex-of-lordosis logic.
+  future_extension_structures:
+  - code: VCAN
+    name: vertebral_canal_boundary
+    geometry_type: surface
+    required: false
+    notes: For stenosis metrics later.
+  - code: FRM
+    name: neural_foramen_boundary
+    geometry_type: surface
+    required: false
+    notes: Foraminal height/area later.
+  - code: FCT
+    name: facet_joint_surfaces
+    geometry_type: surface
+    required: false
+    notes: Facet arthropathy later.
+  - code: PED
+    name: pedicle_centers_or_axes
+    geometry_type: point_or_line
+    required: false
+    notes: Useful later.
+  - code: LR
+    name: lateral_recess_boundary
+    geometry_type: surface
+    required: false
+    notes: Degenerative metrics later.
+annotation_contract:
+  manual_annotation_or_segmentation_targets:
+  - endplate_surfaces_or_rims
+  - vertebral_body_corners_if_needed_for_training
+  - sacral_endplate
+  - femoral_head_centers_or_full_femoral_heads
+  - later_canal_foraminal_facet_boundaries
+  derived_computationally:
+  - endplate_midpoints
+  - vertebral_centroids
+  - posterior_wall_lines
+  - local_vertebral_coordinate_systems
+  - plumb_lines
+  - cobb_angles
+  - apex_location
+  - csvl
+  - hip_axis_midpoint
+minimum_poc_support:
+- disc_height_midpoint
+- disc_height_anterior
+- disc_height_posterior
+- disc_space_angle
+- spondylolisthesis_retrolisthesis
+- segmental_lordosis
+- lumbar_lordosis
+- pelvic_incidence
+- pelvic_tilt
+- sacral_slope
+- sva
+- coronal_balance
+- cobb_angles
+modules:
+- name: vertebral_geometry_primitives
+  outputs:
+  - endplate_planes
+  - body_corners
+  - centroid
+  - posterior_wall_line
+  - local_coordinate_frame
+- name: segment_metrics
+  outputs:
+  - disc_height
+  - disc_angle
+  - listhesis
+  - segmental_lordosis
+- name: spinopelvic_metrics
+  outputs:
+  - pelvic_incidence
+  - pelvic_tilt
+  - sacral_slope
+- name: global_sagittal_coronal_alignment
+  outputs:
+  - lumbar_lordosis
+  - thoracic_kyphosis
+  - tl_junction_kyphosis
+  - sva
+  - coronal_balance
+  - cobb_angles
+- name: degenerative_stenosis_planning_extension
+  outputs:
+  - foraminal_height
+  - canal_area
+  - lateral_recess_measures
+  - facet_metrics
+naming_convention_examples:
+  landmarks:
+  - L4_SEP
+  - L4_IEP
+  - L4_ASC
+  - L4_PSC
+  - L4_VBC
+  - L4_PWL
+  segment_metrics:
+  - L4_L5_DISC_HEIGHT_MID
+  - L4_L5_DISC_ANGLE
+  - L4_ON_L5_LISTHESIS
+  - L4_S1_SEGMENTAL_LORDOSIS
+  global_metrics:
+  - PELVIC_INCIDENCE
+  - PELVIC_TILT
+  - SACRAL_SLOPE
+  - SVA
+  - CORONAL_BALANCE
+  - MAIN_THORACIC_COBB
+field_of_view_rules:
+  lumbar_only_imaging_supports:
+  - disc_height
+  - disc_angle
+  - listhesis
+  - segmental_lordosis
+  - local_degenerative_metrics
+  full_field_standing_imaging_supports:
+  - sva
+  - coronal_balance
+  - thoracic_kyphosis
+  - tl_junction_kyphosis
+  - whole_spine_cobb_analysis
+  - apex_of_lordosis_logic
+required_enforcement_for_every_measurement:
+- exact_landmark_inputs
+- exact_coordinate_frame
+- exact_projection_plane
+- exact_sign_convention
+- exact_units
+- exact_fallback_behavior_if_anatomy_is_truncated
+measurement_dependency_matrix:
+- measurement_name: DISC_HEIGHT_MIDPOINT
+  category: disc_metrics
+  required_landmarks: IEP of level above; SEP of level below; opposing disc midpoints
+  optional_helpful: full endplate rims; local disc plane
+  output_type: distance
+  formula_summary: Distance between opposing endplate surfaces at disc center or between endplate midpoints along local disc normal.
+  poc_priority: high
+- measurement_name: DISC_HEIGHT_ANTERIOR
+  category: disc_metrics
+  required_landmarks: anterior body corners across adjacent bodies; adjacent endplate surfaces
+  optional_helpful: local disc plane
+  output_type: distance
+  formula_summary: Anterior inter-endplate distance measured at anterior disc region.
+  poc_priority: medium
+- measurement_name: DISC_HEIGHT_POSTERIOR
+  category: disc_metrics
+  required_landmarks: posterior body corners across adjacent bodies; adjacent endplate surfaces
+  optional_helpful: posterior wall line
+  output_type: distance
+  formula_summary: Posterior inter-endplate distance measured at posterior disc region.
+  poc_priority: medium
+- measurement_name: DISC_SPACE_ANGLE
+  category: disc_metrics
+  required_landmarks: inferior endplate plane of vertebra above; superior endplate plane of vertebra below
+  optional_helpful: segment local sagittal/coronal plane
+  output_type: angle
+  formula_summary: Cobb-style angle between adjacent endplate planes or their sagittal/coronal traces.
+  poc_priority: high
+- measurement_name: SPONDYLOLISTHESIS_RETROLISTHESIS
+  category: disc_metrics
+  required_landmarks: posterior-superior and posterior-inferior corners; posterior vertebral wall lines; reference segment plane
+  optional_helpful: endplate midpoints; vertebral centroids
+  output_type: distance
+  formula_summary: AP translation of superior vertebra relative to inferior vertebra using posterior vertebral body margins projected onto segment plane.
+  poc_priority: high
+- measurement_name: PELVIC_INCIDENCE
+  category: sagittal_alignment
+  required_landmarks: S1 superior endplate plane; midpoint of S1 superior endplate; right and left femoral head centers; hip axis midpoint
+  optional_helpful: patient vertical reference
+  output_type: angle
+  formula_summary: Angle between line from hip axis to midpoint of S1 superior endplate and line perpendicular to sacral endplate.
+  poc_priority: high
+- measurement_name: PELVIC_TILT
+  category: sagittal_alignment
+  required_landmarks: hip axis midpoint; midpoint of S1 superior endplate; vertical reference direction
+  optional_helpful: patient global frame
+  output_type: angle
+  formula_summary: Angle between the line joining hip axis to S1 midpoint and the vertical.
+  poc_priority: high
+- measurement_name: SACRAL_SLOPE
+  category: sagittal_alignment
+  required_landmarks: S1 superior endplate plane; horizontal reference direction
+  optional_helpful: patient global frame
+  output_type: angle
+  formula_summary: Angle between the sacral endplate and the horizontal.
+  poc_priority: high
+- measurement_name: LUMBAR_LORDOSIS
+  category: sagittal_alignment
+  required_landmarks: superior endplate of L1; superior endplate of S1
+  optional_helpful: local/global sagittal plane
+  output_type: angle
+  formula_summary: Cobb angle between L1 superior endplate and S1 superior endplate.
+  poc_priority: high
+- measurement_name: SEGMENTAL_LORDOSIS
+  category: sagittal_alignment
+  required_landmarks: superior endplate of cranial vertebra; inferior endplate of caudal vertebra
+  optional_helpful: segment local sagittal plane
+  output_type: angle
+  formula_summary: Segment-level Cobb angle between specified bounding endplates.
+  poc_priority: high
+- measurement_name: APEX_OF_LORDOSIS
+  category: sagittal_alignment
+  required_landmarks: anterior cortex/anterior corners of lumbar vertebral bodies; vertebral centroids; sagittal curve spline
+  optional_helpful: sacral or global vertical reference
+  output_type: point_or_vertebra_id
+  formula_summary: Vertebra or fitted lumbar sagittal curve point with maximal anterior offset relative to chosen reference.
+  poc_priority: low
+- measurement_name: THORACIC_KYPHOSIS
+  category: sagittal_alignment
+  required_landmarks: superior endplate of T4; inferior endplate of T12
+  optional_helpful: standardized convention metadata
+  output_type: angle
+  formula_summary: Cobb angle between the specified thoracic endplate planes.
+  poc_priority: medium
+- measurement_name: TL_JUNCTION_KYPHOSIS
+  category: sagittal_alignment
+  required_landmarks: superior endplate of T10; inferior endplate of L2
+  optional_helpful: standardized convention metadata
+  output_type: angle
+  formula_summary: Cobb angle between thoracolumbar junction endplate planes.
+  poc_priority: medium
+- measurement_name: SVA
+  category: sagittal_alignment
+  required_landmarks: center of C7 body; posterior-superior corner of S1
+  optional_helpful: vertical reference direction
+  output_type: distance
+  formula_summary: Horizontal offset from the C7 plumb line to the posterior-superior S1 point.
+  poc_priority: high
+- measurement_name: CORONAL_BALANCE_C7_CSVL
+  category: coronal_alignment
+  required_landmarks: center of C7 body; sacral center / CSVL construction; coronal vertical direction
+  optional_helpful: patient global frame
+  output_type: distance
+  formula_summary: Horizontal coronal offset between the C7 plumb line and the CSVL.
+  poc_priority: high
+- measurement_name: COBB_ANGLE
+  category: coronal_alignment
+  required_landmarks: upper end vertebra; lower end vertebra; superior endplate of upper end vertebra; inferior endplate of lower end vertebra
+  optional_helpful: apical vertebra; neutral vertebra; stable vertebra
+  output_type: angle
+  formula_summary: Angle between the superior endplate of the cephalad end vertebra and the inferior endplate of the caudad end vertebra.
+  poc_priority: high
+vertebra_object_template:
+  vertebra_id: L4
+  superior_endplate_plane: Plane
+  inferior_endplate_plane: Plane
+  superior_endplate_surface: Surface | null
+  inferior_endplate_surface: Surface | null
+  superior_endplate_midpoint: Point3D
+  inferior_endplate_midpoint: Point3D
+  anterior_superior_corner: Point3D
+  posterior_superior_corner: Point3D
+  anterior_inferior_corner: Point3D
+  posterior_inferior_corner: Point3D
+  vertebral_body_centroid: Point3D
+  posterior_wall_line: Line3D
+  mid_sagittal_plane: Plane
+  mid_coronal_plane: Plane
+  local_coordinate_frame: CoordinateFrame3D

@@ -1,0 +1,8 @@
+name: totalsegmentator-win
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - TotalSegmentator>=2.12,<3

@@ -1,0 +1,12 @@
+name: spinelab-polypose
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - torch==2.5.*
+      - cupy-cuda12x
+      - monai
+      - totalsegmentator
+      - polypose

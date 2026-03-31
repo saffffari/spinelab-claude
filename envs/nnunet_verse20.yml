@@ -1,0 +1,11 @@
+name: spinelab-nnunet-verse20
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - git
+  - pigz
+  - tmux
+  - pip
+  - pip:
+      - -r envs/nnunet_verse20_requirements.txt

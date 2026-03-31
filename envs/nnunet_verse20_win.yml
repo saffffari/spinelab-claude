@@ -1,0 +1,11 @@
+# Baseline Windows conda environment for the production nnU-Net sidecar.
+# Install the pip requirements from envs/nnunet_verse20_requirements.txt and
+# then force-install the CUDA 12.4 PyTorch wheel via
+# tools/run_verse20_inference.ps1 -Action setup.
+name: spinelab-nnunet-verse20-win
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - git

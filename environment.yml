@@ -1,0 +1,17 @@
+name: spinelab-0-2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pyside6
+  - numpy
+  - networkx
+  - scipy
+  - simpleitk
+  - pytest
+  - pytest-qt
+  - ruff
+  - mypy
+  - pip
+  - pip:
+      - hatchling
