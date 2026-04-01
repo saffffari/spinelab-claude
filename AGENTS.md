@@ -2,14 +2,14 @@
 
 ## Scope
 
-- Work only inside `D:\dev\spinelab_0.2`.
-- Never touch `D:\dev\spinelab\spinelab`.
-- Non-repo case data lives under `D:\dev\spinelab_data`.
+- Work only inside `D:\claude\spinelab`.
+- Never touch legacy code folders outside the repo.
+- Non-repo case data lives under `E:\data\spinelab`.
 - Keep the data root constrained to two top-level folders only:
-  - `D:\dev\spinelab_data\raw_test_data`
-  - `D:\dev\spinelab_data\cases`
-- Use `D:\dev\spinelab_data\raw_test_data` for raw or converted reference inputs.
-- Use `D:\dev\spinelab_data\cases` as the default location for saved `.spine` case packages.
+  - `E:\data\spinelab\raw_test_data`
+  - `E:\data\spinelab\cases`
+- Use `E:\data\spinelab\raw_test_data` for raw or converted reference inputs.
+- Use `E:\data\spinelab\cases` as the default location for saved `.spine` case packages.
 - Treat transient runtime sessions as local-app-data state under `%LOCALAPPDATA%\SpineLab\sessions`, not as durable case storage.
 - Legacy folder-backed cases may still appear as migration inputs. If such folders are touched explicitly, they must keep only these root subfolders:
   - `ct`
@@ -20,7 +20,7 @@
   - `analytics`
 - Keep legacy-case meshes under `3d\supine` or `3d\standing`.
 - Keep manifests, stage artifacts, exports, reports, and other program-managed legacy case data under `analytics`.
-- Treat unrelated user-owned contents under `D:\dev\spinelab_annex` as out of scope unless the user explicitly points to them.
+- Media assets (graphics, renders, design files, papers) live under `E:\data\spinelab\media`.
 - Treat `prototypes/electron-ui/` as a frozen reference, not the active runtime.
 
 ---

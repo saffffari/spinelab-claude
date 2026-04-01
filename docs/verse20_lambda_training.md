@@ -13,12 +13,12 @@ Goal:
 
 - `VERSe2020` subject-based data downloaded locally at `E:\data\verse_data`
 - conversion script:
-  - [tools/prepare_verse20_nnunet.py](/D:/dev/spinelab_0.2/tools/prepare_verse20_nnunet.py)
+  - [tools/prepare_verse20_nnunet.py](/D:/claude/spinelab/tools/prepare_verse20_nnunet.py)
 - Lambda training bootstrap:
-  - [tools/nnunet_verse20_lambda_train.sh](/D:/dev/spinelab_0.2/tools/nnunet_verse20_lambda_train.sh)
+  - [tools/nnunet_verse20_lambda_train.sh](/D:/claude/spinelab/tools/nnunet_verse20_lambda_train.sh)
 - dedicated training environment definitions:
-  - [envs/nnunet_verse20.yml](/D:/dev/spinelab_0.2/envs/nnunet_verse20.yml)
-  - [envs/nnunet_verse20_requirements.txt](/D:/dev/spinelab_0.2/envs/nnunet_verse20_requirements.txt)
+  - [envs/nnunet_verse20.yml](/D:/claude/spinelab/envs/nnunet_verse20.yml)
+  - [envs/nnunet_verse20_requirements.txt](/D:/claude/spinelab/envs/nnunet_verse20_requirements.txt)
 
 ## The Mental Model
 
@@ -147,11 +147,11 @@ The bootstrap script is intentionally for the first run only. Once raw data, pla
 
 Reusable Lambda scripts now live under:
 
-- [tools/nnunet_verse20_lambda_common.sh](/D:/dev/spinelab_0.2/tools/nnunet_verse20_lambda_common.sh)
-- [tools/nnunet_verse20_lambda_train_fold.sh](/D:/dev/spinelab_0.2/tools/nnunet_verse20_lambda_train_fold.sh)
-- [tools/nnunet_verse20_post_fold.sh](/D:/dev/spinelab_0.2/tools/nnunet_verse20_post_fold.sh)
-- [tools/nnunet_verse20_post_fold_gate.py](/D:/dev/spinelab_0.2/tools/nnunet_verse20_post_fold_gate.py)
-- [tools/run_lambda_post_fold.ps1](/D:/dev/spinelab_0.2/tools/run_lambda_post_fold.ps1)
+- [tools/nnunet_verse20_lambda_common.sh](/D:/claude/spinelab/tools/nnunet_verse20_lambda_common.sh)
+- [tools/nnunet_verse20_lambda_train_fold.sh](/D:/claude/spinelab/tools/nnunet_verse20_lambda_train_fold.sh)
+- [tools/nnunet_verse20_post_fold.sh](/D:/claude/spinelab/tools/nnunet_verse20_post_fold.sh)
+- [tools/nnunet_verse20_post_fold_gate.py](/D:/claude/spinelab/tools/nnunet_verse20_post_fold_gate.py)
+- [tools/run_lambda_post_fold.ps1](/D:/claude/spinelab/tools/run_lambda_post_fold.ps1)
 
 ## Step 5 — Understand What The Prep Script Creates
 

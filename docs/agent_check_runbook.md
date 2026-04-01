@@ -2,7 +2,7 @@
 
 This document is the canonical runbook for recurring SpineLab validation. It is written for agents that need to execute regular checks on either a hosted CI runner or the local Windows workstation without inventing new automation or silently changing the intended validation surface.
 
-Use this runbook together with [docs/project_brief.md](/D:/dev/spinelab_0.2/docs/project_brief.md), [docs/design_system.md](/D:/dev/spinelab_0.2/docs/design_system.md), and [docs/code_review.md](/D:/dev/spinelab_0.2/docs/code_review.md). The brief defines the product path and non-negotiables, the design system defines viewport and UI interaction constraints, and the code review rubric defines the main regression surface.
+Use this runbook together with [docs/project_brief.md](/D:/claude/spinelab/docs/project_brief.md), [docs/design_system.md](/D:/claude/spinelab/docs/design_system.md), and [docs/code_review.md](/D:/claude/spinelab/docs/code_review.md). The brief defines the product path and non-negotiables, the design system defines viewport and UI interaction constraints, and the code review rubric defines the main regression surface.
 
 ## Status Vocabulary
 
@@ -31,19 +31,19 @@ Run the bootstrap once per fresh environment before executing any check entry.
 ### CI-Oriented Bootstrap
 
 ```powershell
-cd D:\dev\spinelab_0.2
+cd D:\claude\spinelab
 conda env create -f environment.yml
-conda run -n spinelab-0-2 python -m pip install -e .
+conda run -n spinelab-claude python -m pip install -e .
 ```
 
 ### Local Workstation Bootstrap
 
 ```powershell
-cd D:\dev\spinelab_0.2
-conda run -n spinelab-0-2 python -m pip install -e .
+cd D:\claude\spinelab
+conda run -n spinelab-claude python -m pip install -e .
 ```
 
-If the app environment needs a full rebuild, follow the setup section in [README.md](/D:/dev/spinelab_0.2/README.md) first, then return to this runbook.
+If the app environment needs a full rebuild, follow the setup section in [README.md](/D:/claude/spinelab/README.md) first, then return to this runbook.
 
 ## Check Entries
 
@@ -52,8 +52,8 @@ If the app environment needs a full rebuild, follow the setup section in [README
 - Target: `both`
 - Cadence: every branch push, PR, pre-merge verification, and before release tagging
 - Prerequisites:
-  - the repo is available at `D:\dev\spinelab_0.2`
-  - the `spinelab-0-2` environment exists and has `python -m pip install -e .` applied
+  - the repo is available at `D:\claude\spinelab`
+  - the `spinelab-claude` environment exists and has `python -m pip install -e .` applied
   - the agent can invoke `conda run` or the local PowerShell wrapper
 - Command:
   - Local Windows wrapper:
@@ -65,10 +65,10 @@ If the app environment needs a full rebuild, follow the setup section in [README
   - Explicit fallback sequence for CI or wrapper troubleshooting:
 
     ```powershell
-    conda run -n spinelab-0-2 python tools/check_theme_usage.py
-    conda run -n spinelab-0-2 python -m ruff check .
-    conda run -n spinelab-0-2 python -m mypy src
-    conda run -n spinelab-0-2 python -m pytest -q
+    conda run -n spinelab-claude python tools/check_theme_usage.py
+    conda run -n spinelab-claude python -m ruff check .
+    conda run -n spinelab-claude python -m mypy src
+    conda run -n spinelab-claude python -m pytest -q
     ```
 
 - Pass criteria:
@@ -103,12 +103,12 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 - Cadence: daily on the workstation and before signoff on UI, viewport, shell, or workflow changes
 - Prerequisites:
   - the local workstation can display Qt windows
-  - the `spinelab-0-2` environment is installed
+  - the `spinelab-claude` environment is installed
   - the machine exposes a usable hardware OpenGL path
 - Command:
 
   ```powershell
-  conda run -n spinelab-0-2 python -m spinelab.main
+  conda run -n spinelab-claude python -m spinelab.main
   ```
 
   The equivalent `spinelab` launcher is also acceptable on the workstation.
@@ -134,7 +134,7 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 - Target: `local-only`
 - Cadence: daily on the workstation, before pipeline signoff, and before release candidates
 - Prerequisites:
-  - a representative saved `.spine` package exists, typically under `D:\dev\spinelab_data\cases`
+  - a representative saved `.spine` package exists, typically under `E:\data\spinelab\cases`
   - the case package includes the assets needed for the intended validation path
   - the active production segmentation bundle is configured in settings and resolves through the installed runtime model
   - a usable GPU is available for the intended workstation validation path
@@ -148,7 +148,7 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
   - Measurement and Report unlock from the updated manifest outputs
   - the transient runtime manifest under `%LOCALAPPDATA%\SpineLab\sessions\<session-id>\runtime\case_manifest.json` records stage runs, requested versus effective device metadata, and stage outputs
   - stage roots under the transient session `analytics/derived/` tree contain the expected `performance-trace.json` files where the current pipeline writes them
-  - viewport interaction remains aligned with [docs/design_system.md](/D:/dev/spinelab_0.2/docs/design_system.md):
+  - viewport interaction remains aligned with [docs/design_system.md](/D:/claude/spinelab/docs/design_system.md):
     - middle mouse pans 3D, orthographic, and 2D viewports
     - wheel zooms by default
     - the CT stack keeps wheel-to-slice and `Ctrl` plus wheel zoom
@@ -170,22 +170,22 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 - Target: `both`
 - Cadence: scheduled daily or weekly, and before release candidates
 - Prerequisites:
-  - the `spinelab-0-2` environment is installed
+  - the `spinelab-claude` environment is installed
 - Command:
 
   ```powershell
-  conda run -n spinelab-0-2 python .\tools\benchmark_startup.py
+  conda run -n spinelab-claude python .\tools\benchmark_startup.py
   ```
 
 - Pass criteria:
   - the tool exits successfully
-  - a new run directory is created under `D:\dev\spinelab_data\raw_test_data\_benchmarks\startup\`
+  - a new run directory is created under `E:\data\spinelab\raw_test_data\_benchmarks\startup\`
   - the generated `startup_imports.json` is readable
 - Blocked criteria:
   - the benchmark output root cannot be created
   - the app environment is unavailable
 - Artifacts produced:
-  - `D:\dev\spinelab_data\raw_test_data\_benchmarks\startup\<timestamp>\startup_imports.json`
+  - `E:\data\spinelab\raw_test_data\_benchmarks\startup\<timestamp>\startup_imports.json`
 - Escalation guidance:
   - this is report-only
   - compare the newest run to the immediately previous saved run and describe the delta instead of enforcing a hard threshold
@@ -201,24 +201,24 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 - Command:
 
   ```powershell
-  conda run -n spinelab-0-2 python .\tools\benchmark_mesh_pipeline.py
+  conda run -n spinelab-claude python .\tools\benchmark_mesh_pipeline.py
   ```
 
   Or target a specific case or segmentation contract:
 
   ```powershell
-  conda run -n spinelab-0-2 python .\tools\benchmark_mesh_pipeline.py D:\dev\spinelab_data\cases\<case-id>\analytics\derived\segmentation\segmentation.json
+  conda run -n spinelab-claude python .\tools\benchmark_mesh_pipeline.py E:\data\spinelab\cases\<case-id>\analytics\derived\segmentation\segmentation.json
   ```
 
 - Pass criteria:
   - the benchmark exits successfully
-  - a new run directory is created under `D:\dev\spinelab_data\raw_test_data\_benchmarks\mesh_pipeline\`
+  - a new run directory is created under `E:\data\spinelab\raw_test_data\_benchmarks\mesh_pipeline\`
   - the benchmark summary files are readable
 - Blocked criteria:
   - no segmentation contracts are available under the data root
   - the app environment is unavailable
 - Artifacts produced:
-  - the benchmark run directory under `D:\dev\spinelab_data\raw_test_data\_benchmarks\mesh_pipeline\`
+  - the benchmark run directory under `E:\data\spinelab\raw_test_data\_benchmarks\mesh_pipeline\`
   - the JSON summary and Markdown summary written by the harness
 - Escalation guidance:
   - this is report-only
@@ -257,18 +257,18 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
   - a CUDA-capable GPU is available
   - the `spinelab-nnunet-verse20-win` environment is installed
   - the checkpoint exists at the configured results root
-  - raw test data exists under `D:\dev\spinelab_data\raw_test_data`
+  - raw test data exists under `E:\data\spinelab\raw_test_data`
 - Command:
 
   ```powershell
   powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 -Action raw-test-data
   ```
 
-  A narrower explicit-input invocation is also acceptable through [tools/run_verse20_inference.py](/D:/dev/spinelab_0.2/tools/run_verse20_inference.py) when the agent needs a single-scan smoke.
+  A narrower explicit-input invocation is also acceptable through [tools/run_verse20_inference.py](/D:/claude/spinelab/tools/run_verse20_inference.py) when the agent needs a single-scan smoke.
 
 - Pass criteria:
   - the wrapper launches the dedicated Windows nnU-Net environment
-  - a prediction job directory is created under `D:\dev\spinelab_data\raw_test_data\outputs`
+  - a prediction job directory is created under `E:\data\spinelab\raw_test_data\outputs`
   - the run manifest is written and the prediction outputs are materially usable for smoke evaluation
 - Blocked criteria:
   - no GPU is available
@@ -276,7 +276,7 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
   - no checkpoint is installed at the configured results root
   - no raw test data is present
 - Artifacts produced:
-  - a job folder under `D:\dev\spinelab_data\raw_test_data\outputs\`
+  - a job folder under `E:\data\spinelab\raw_test_data\outputs\`
   - `run_manifest.json` and prediction outputs from the helper
 - Escalation guidance:
   - this is report-only
@@ -285,12 +285,12 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 
 ## Production Segmentation Bundle Prerequisite
 
-The current production segmentation path requires an active installed bundle. The repository exposes the bundle registry and installation logic in code under [src/spinelab/segmentation/bundles.py](/D:/dev/spinelab_0.2/src/spinelab/segmentation/bundles.py), including `SegmentationBundleRegistry` and `install_nnunet_bundle()`. It also ships a checked-in helper at [tools/install_segmentation_bundle.py](/D:/dev/spinelab_0.2/tools/install_segmentation_bundle.py) for importing and activating a local nnU-Net results tree.
+The current production segmentation path requires an active installed bundle. The repository exposes the bundle registry and installation logic in code under [src/spinelab/segmentation/bundles.py](/D:/claude/spinelab/src/spinelab/segmentation/bundles.py), including `SegmentationBundleRegistry` and `install_nnunet_bundle()`. It also ships a checked-in helper at [tools/install_segmentation_bundle.py](/D:/claude/spinelab/tools/install_segmentation_bundle.py) for importing and activating a local nnU-Net results tree.
 
 If the workstation intends to run Check 3 and no production bundle is active, resolve that prerequisite out of band before rerunning the smoke path. The helper entrypoint is:
 
 ```powershell
-conda run -n spinelab-0-2 python .\tools\install_segmentation_bundle.py --bundle-id <bundle-id> --activate
+conda run -n spinelab-claude python .\tools\install_segmentation_bundle.py --bundle-id <bundle-id> --activate
 ```
 
 If a check requires a production bundle and none is configured, classify the check as `blocked` and report that the prerequisite gap is operational, not a newly discovered product failure.
@@ -320,7 +320,7 @@ Agents should end each run with a compact report in the following structure.
 
 Date: YYYY-MM-DD
 Target: ci | local-workstation
-Repo: D:\dev\spinelab_0.2
+Repo: D:\claude\spinelab
 Environment:
 - Python env(s) used:
 - GPU:

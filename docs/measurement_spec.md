@@ -2,7 +2,7 @@
 
 This is the operational source for metric definitions, validity gating, and required primitives.
 
-Keep this document in sync with [docs/spinelab_manifesto.md](/D:/dev/spinelab_0.2/docs/spinelab_manifesto.md).
+Keep this document in sync with [docs/spinelab_manifesto.md](/D:/claude/spinelab/docs/spinelab_manifesto.md).
 
 ## Measurement Principles
 
@@ -17,7 +17,7 @@ Keep this document in sync with [docs/spinelab_manifesto.md](/D:/dev/spinelab_0.
 
 The repo now carries an imported measurement-oriented ontology package as a single canonical file:
 
-- [docs/ontology/spinelab_vertebral_labeling_ontology.yaml](/D:/dev/spinelab_0.2/docs/ontology/spinelab_vertebral_labeling_ontology.yaml)
+- [docs/ontology/spinelab_vertebral_labeling_ontology.yaml](/D:/claude/spinelab/docs/ontology/spinelab_vertebral_labeling_ontology.yaml)
 
 That file is frozen and must not be edited without explicit user approval.
 

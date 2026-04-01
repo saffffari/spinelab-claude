@@ -19,7 +19,7 @@ from spinelab.models.manifest import utc_now
 
 from .session_store import SessionHandle, SessionStore, default_session_root
 
-DEFAULT_DATA_ROOT = Path(os.environ.get("SPINELAB_DATA_ROOT", r"D:\dev\spinelab_data"))
+DEFAULT_DATA_ROOT = Path(os.environ.get("SPINELAB_DATA_ROOT", r"E:\data\spinelab"))
 EXTERNAL_CASE_PREFIX = "external::"
 DEMO_CASE_ID = "demo-test-processed"
 DEMO_DATASET_NAMES = ("demo_case", "test_processed")

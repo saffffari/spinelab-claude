@@ -1,4 +1,4 @@
-name: spinelab-0-2
+name: spinelab-claude
 channels:
   - conda-forge
 dependencies:

@@ -2,7 +2,7 @@
 
 This is the operational source for artifact schemas, coordinate-space rules, and transform bookkeeping.
 
-Keep this document in sync with [docs/spinelab_manifesto.md](/D:/dev/spinelab_0.2/docs/spinelab_manifesto.md).
+Keep this document in sync with [docs/spinelab_manifesto.md](/D:/claude/spinelab/docs/spinelab_manifesto.md).
 
 ## Contract Principles
 
@@ -113,7 +113,7 @@ Examples:
 
 The repo now stores a separate imported ontology specification as a single canonical file:
 
-- [docs/ontology/spinelab_vertebral_labeling_ontology.yaml](/D:/dev/spinelab_0.2/docs/ontology/spinelab_vertebral_labeling_ontology.yaml)
+- [docs/ontology/spinelab_vertebral_labeling_ontology.yaml](/D:/claude/spinelab/docs/ontology/spinelab_vertebral_labeling_ontology.yaml)
 
 That file is frozen and must not be edited without explicit user approval.
 
@@ -165,11 +165,11 @@ SpineLab now distinguishes between:
 1. the saved durable case package, and
 2. the transient runtime session workspace.
 
-The normal durable case format is a single `.spine` file. The detailed saved-case format is defined in [docs/spine-format.md](/D:/dev/spinelab_0.2/docs/spine-format.md).
+The normal durable case format is a single `.spine` file. The detailed saved-case format is defined in [docs/spine-format.md](/D:/claude/spinelab/docs/spine-format.md).
 
 ### Saved Durable Case
 
-The default user-facing save location remains `D:\dev\spinelab_data\cases`, but the saved case itself is a single `.spine` ZIP package rather than a live managed folder tree.
+The default user-facing save location remains `E:\data\spinelab\cases`, but the saved case itself is a single `.spine` ZIP package rather than a live managed folder tree.
 
 The package layout is:
 
@@ -296,7 +296,7 @@ Rules:
 
 Installed production segmentation bundles live under:
 
-- `D:\dev\spinelab_data\raw_test_data\models\segmentation\<bundle-id>\`
+- `E:\data\spinelab\raw_test_data\models\segmentation\<bundle-id>\`
 
 Each bundle manifest must include at least:
 
@@ -489,9 +489,9 @@ Current mode requirements:
 
 The current repo already has a case manifest and stage artifact scaffolding in:
 
-- [src/spinelab/models/manifest.py](/D:/dev/spinelab_0.2/src/spinelab/models/manifest.py)
-- [src/spinelab/pipeline/artifacts.py](/D:/dev/spinelab_0.2/src/spinelab/pipeline/artifacts.py)
-- [src/spinelab/pipeline/contracts.py](/D:/dev/spinelab_0.2/src/spinelab/pipeline/contracts.py)
+- [src/spinelab/models/manifest.py](/D:/claude/spinelab/src/spinelab/models/manifest.py)
+- [src/spinelab/pipeline/artifacts.py](/D:/claude/spinelab/src/spinelab/pipeline/artifacts.py)
+- [src/spinelab/pipeline/contracts.py](/D:/claude/spinelab/src/spinelab/pipeline/contracts.py)
 
 Those structures are still an interim product shell. They should evolve toward the contract fields above rather than becoming the permanent schema by accident.
 

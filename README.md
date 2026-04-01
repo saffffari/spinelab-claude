@@ -20,10 +20,10 @@ Current repo state:
 ## Setup
 
 ```powershell
-cd D:\dev\spinelab_0.2
-conda env remove -n spinelab-0-2 -y
+cd D:\claude\spinelab
+conda env remove -n spinelab-claude -y
 mamba env create -f environment.yml
-conda activate spinelab-0-2
+conda activate spinelab-claude
 python -m pip install -e .
 ```
 
@@ -35,12 +35,12 @@ For interactive desktop 3D, the runtime must not resolve through Conda `mesalib`
 
 Repo hygiene:
 
-- keep non-repo data, case inputs, exports, and derived outputs under `D:\dev\spinelab_data`
+- keep non-repo data, case inputs, exports, and derived outputs under `E:\data\spinelab`
 - keep only two top-level data folders:
-  - `D:\dev\spinelab_data\raw_test_data`
-  - `D:\dev\spinelab_data\cases`
-- use `D:\dev\spinelab_data\raw_test_data` for raw or converted reference inputs
-- use `D:\dev\spinelab_data\cases` as the default directory for saved `.spine` packages
+  - `E:\data\spinelab\raw_test_data`
+  - `E:\data\spinelab\cases`
+- use `E:\data\spinelab\raw_test_data` for raw or converted reference inputs
+- use `E:\data\spinelab\cases` as the default directory for saved `.spine` packages
 - transient unsaved sessions live under `%LOCALAPPDATA%\SpineLab\sessions`, not under the data root
 - legacy folder-backed cases may still exist as migration inputs, but `.spine` is now the only normal durable saved-case format
 - do not use repo-root scratch folders as the long-term home for outputs
@@ -115,16 +115,16 @@ That setup path force-installs the official CUDA 12.4 PyTorch wheel on Windows s
 By default, the helper expects a locally mounted trained fold at:
 
 ```text
-D:\dev\spinelab_data\nnunet\results\Dataset321_VERSE20Vertebrae\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres\fold_0\checkpoint_final.pth
+E:\data\spinelab\nnunet\results\Dataset321_VERSE20Vertebrae\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres\fold_0\checkpoint_final.pth
 ```
 
-Run inference on every scan under `D:\dev\spinelab_data\raw_test_data`:
+Run inference on every scan under `E:\data\spinelab\raw_test_data`:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 `
   -Action raw-test-data `
-  -ResultsRoot D:\dev\spinelab_data\nnunet\results `
-  -OutputRoot D:\dev\spinelab_data\raw_test_data\outputs
+  -ResultsRoot E:\data\spinelab\nnunet\results `
+  -OutputRoot E:\data\spinelab\raw_test_data\outputs
 ```
 
 Run inference on a reproducible random sample of three VERSe `03_test` scans:
@@ -132,20 +132,20 @@ Run inference on a reproducible random sample of three VERSe `03_test` scans:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 `
   -Action verse03-random `
-  -ResultsRoot D:\dev\spinelab_data\nnunet\results `
-  -OutputRoot D:\dev\spinelab_data\raw_test_data\outputs `
+  -ResultsRoot E:\data\spinelab\nnunet\results `
+  -OutputRoot E:\data\spinelab\raw_test_data\outputs `
   -SampleSize 3 `
   -Seed 20260326
 ```
 
-The helper stages `_0000` channel-formatted inputs inside the job folder, runs the shared Windows-safe nnU-Net sidecar entrypoint, and writes both the predicted segmentations and a `run_manifest.json` under `D:\dev\spinelab_data\raw_test_data\outputs\...`.
+The helper stages `_0000` channel-formatted inputs inside the job folder, runs the shared Windows-safe nnU-Net sidecar entrypoint, and writes both the predicted segmentations and a `run_manifest.json` under `E:\data\spinelab\raw_test_data\outputs\...`.
 
 ## Production Segmentation Bundles
 
 SpineLab now treats trained segmentation weights as installed production bundles under:
 
 ```text
-D:\dev\spinelab_data\raw_test_data\models\segmentation\<bundle-id>\
+E:\data\spinelab\raw_test_data\models\segmentation\<bundle-id>\
 ```
 
 Install a locally synced VERSe20 results tree into the canonical bundle registry and activate it for Analyze:
@@ -153,7 +153,7 @@ Install a locally synced VERSe20 results tree into the canonical bundle registry
 ```powershell
 python .\tools\install_segmentation_bundle.py `
   --bundle-id verse20-resenc-fold0 `
-  --source-results-root D:\dev\spinelab_data\nnunet\results\Dataset321_VERSE20Vertebrae\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres `
+  --source-results-root E:\data\spinelab\nnunet\results\Dataset321_VERSE20Vertebrae\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres `
   --active-checkpoint-id fold-0:checkpoint_final `
   --activate
 ```
@@ -184,18 +184,18 @@ For UI work, the full SpineLab shell is the source of truth.
 
 ## Checks
 
-Use [docs/agent_check_runbook.md](/D:/dev/spinelab_0.2/docs/agent_check_runbook.md) as the source of truth for recurring validation tiers, status vocabulary, known-baseline handling, and agent reporting. The commands below are only the fast local gate entrypoint.
+Use [docs/agent_check_runbook.md](/D:/claude/spinelab/docs/agent_check_runbook.md) as the source of truth for recurring validation tiers, status vocabulary, known-baseline handling, and agent reporting. The commands below are only the fast local gate entrypoint.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\run_repo_checks.ps1
 ```
 
-The bare `python` in a shell may resolve to a non-project interpreter. The check script always targets the `spinelab-0-2` environment so repo verification matches the real app runtime.
+The bare `python` in a shell may resolve to a non-project interpreter. The check script always targets the `spinelab-claude` environment so repo verification matches the real app runtime.
 Qt tests now bootstrap the production SpineLab `QApplication` setup, and shell-level launch or layout checks should target `MainWindow` rather than showing embedded workspaces as fake top-level windows.
 
 ## Mesh Benchmarking
 
-For scheduled optimization audits, delta reporting, and workstation-only prerequisites, follow [docs/agent_check_runbook.md](/D:/dev/spinelab_0.2/docs/agent_check_runbook.md).
+For scheduled optimization audits, delta reporting, and workstation-only prerequisites, follow [docs/agent_check_runbook.md](/D:/claude/spinelab/docs/agent_check_runbook.md).
 
 Use the data-root-backed benchmark harness to compare mesh extractors on real segmentation outputs:
 
@@ -206,10 +206,10 @@ python .\tools\benchmark_mesh_pipeline.py
 Or point it at specific segmentation contracts or case folders:
 
 ```powershell
-python .\tools\benchmark_mesh_pipeline.py D:\dev\spinelab_data\cases\my-case\analytics\derived\segmentation\segmentation.json
+python .\tools\benchmark_mesh_pipeline.py E:\data\spinelab\cases\my-case\analytics\derived\segmentation\segmentation.json
 ```
 
-The benchmark writes per-vertebra results plus an aggregate summary under `D:\dev\spinelab_data\raw_test_data\_benchmarks\mesh_pipeline\`.
+The benchmark writes per-vertebra results plus an aggregate summary under `E:\data\spinelab\raw_test_data\_benchmarks\mesh_pipeline\`.
 
 For cold import and startup-sensitive paths:
 

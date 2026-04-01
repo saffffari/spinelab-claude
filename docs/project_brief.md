@@ -2,7 +2,7 @@
 
 This is the short operational brief for day-to-day engineering work.
 
-Use this document first. Open [docs/spinelab_manifesto.md](/D:/dev/spinelab_0.2/docs/spinelab_manifesto.md) only when the task needs broader rationale, roadmap context, or reference support.
+Use this document first. Open [docs/spinelab_manifesto.md](/D:/claude/spinelab/docs/spinelab_manifesto.md) only when the task needs broader rationale, roadmap context, or reference support.
 
 ## Thesis
 
@@ -161,7 +161,7 @@ If imaging is incomplete:
 
 ## Read Next
 
-- Open [docs/data_contracts.md](/D:/dev/spinelab_0.2/docs/data_contracts.md) before changing artifacts, schemas, transforms, or coordinate handling.
-- Open [docs/measurement_spec.md](/D:/dev/spinelab_0.2/docs/measurement_spec.md) before changing metrics, validity logic, or required primitives.
-- Open [docs/ontology/spinelab_vertebral_labeling_ontology.yaml](/D:/dev/spinelab_0.2/docs/ontology/spinelab_vertebral_labeling_ontology.yaml) before changing ontology, landmark naming, or measurement dependency definitions. Do not edit it without explicit user approval.
-- Open [docs/spinelab_manifesto.md](/D:/dev/spinelab_0.2/docs/spinelab_manifesto.md) when you need roadmap, risk, data-strategy, or literature context.
+- Open [docs/data_contracts.md](/D:/claude/spinelab/docs/data_contracts.md) before changing artifacts, schemas, transforms, or coordinate handling.
+- Open [docs/measurement_spec.md](/D:/claude/spinelab/docs/measurement_spec.md) before changing metrics, validity logic, or required primitives.
+- Open [docs/ontology/spinelab_vertebral_labeling_ontology.yaml](/D:/claude/spinelab/docs/ontology/spinelab_vertebral_labeling_ontology.yaml) before changing ontology, landmark naming, or measurement dependency definitions. Do not edit it without explicit user approval.
+- Open [docs/spinelab_manifesto.md](/D:/claude/spinelab/docs/spinelab_manifesto.md) when you need roadmap, risk, data-strategy, or literature context.

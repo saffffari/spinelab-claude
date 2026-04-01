@@ -83,7 +83,7 @@ Exit criteria:
 
 - Measurement loads the real generated meshes, not fallback/demo geometry
 - mesh artifacts preserve segmentation provenance and coordinate-frame metadata
-- benchmark outputs are written under `D:\dev\spinelab_data\raw_test_data\_benchmarks\mesh_pipeline\` and summarize runtime, Dice, and QC pass rate
+- benchmark outputs are written under `E:\data\spinelab\raw_test_data\_benchmarks\mesh_pipeline\` and summarize runtime, Dice, and QC pass rate
 
 ## Phase D — PTv3 Substructure + Landmark Slice
 

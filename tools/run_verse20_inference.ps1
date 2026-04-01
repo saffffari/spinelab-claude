@@ -1,8 +1,8 @@
 param(
     [ValidateSet("setup", "raw-test-data", "verse03-random")]
     [string]$Action = "raw-test-data",
-    [string]$ResultsRoot = "D:\dev\spinelab_data\nnunet\results",
-    [string]$OutputRoot = "D:\dev\spinelab_data\raw_test_data\outputs",
+    [string]$ResultsRoot = "E:\data\spinelab\nnunet\results",
+    [string]$OutputRoot = "E:\data\spinelab\raw_test_data\outputs",
     [int]$SampleSize = 3,
     [int]$Seed = 20260326,
     [string]$Device = "auto",

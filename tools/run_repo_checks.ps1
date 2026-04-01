@@ -1,5 +1,5 @@
 param(
-    [string]$EnvName = "spinelab-0-2"
+    [string]$EnvName = "spinelab-claude"
 )
 
 $ErrorActionPreference = "Stop"
