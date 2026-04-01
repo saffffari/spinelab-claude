@@ -459,6 +459,7 @@ class CaseStore:
         assert self._active_session is not None
         asset_id = f"asset-{uuid4().hex[:10]}"
         destination = self._unique_destination(self.ct_dir(manifest.case_id) / f"{asset_id}.nii.gz")
+        destination.parent.mkdir(parents=True, exist_ok=True)
         image = self._read_dicom_series(source_files)
         sitk.WriteImage(image, str(destination), useCompression=True)
         asset = StudyAsset(
