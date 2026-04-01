@@ -888,12 +888,12 @@ def write_point_cloud(
         path,
         points=np.asarray(points, dtype=np.float32),
         normals=np.asarray(normals, dtype=np.float32),
-        vertebra_id=np.asarray(vertebra_id),
-        structure_instance_id=np.asarray(structure_instance_id),
-        display_label=np.asarray(display_label),
-        standard_level_id=np.asarray(standard_level_id or ""),
-        coordinate_frame=np.asarray(coordinate_frame),
-        source_mesh_path=np.asarray(str(source_mesh_path)),
+        vertebra_id=np.array(vertebra_id.encode("utf-8")),
+        structure_instance_id=np.array(structure_instance_id.encode("utf-8")),
+        display_label=np.array(display_label.encode("utf-8")),
+        standard_level_id=np.array((standard_level_id or "").encode("utf-8")),
+        coordinate_frame=np.array(coordinate_frame.encode("utf-8")),
+        source_mesh_path=np.array(str(source_mesh_path).encode("utf-8")),
     )
 
 

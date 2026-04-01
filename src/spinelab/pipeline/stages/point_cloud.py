@@ -139,7 +139,7 @@ def run_point_cloud_stage(
     extraction_elapsed = time.perf_counter() - extraction_started_at
 
     write_started_at = time.perf_counter()
-    for entry, result in zip(vertebra_entries, results, strict=False):
+    for entry, result in zip(vertebra_entries, results, strict=True):
         entry_payload: dict[str, object] = {
             "vertebra_id": entry.vertebra_id,
             "structure_instance_id": entry.structure_instance_id,
@@ -178,8 +178,10 @@ def run_point_cloud_stage(
             continue
 
         point_cloud_path = pc_dir / f"{entry.vertebra_id}.npz"
-        assert result.points is not None
-        assert result.normals is not None
+        if result.points is None or result.normals is None:
+            warnings.append(f"{entry.vertebra_id}: missing point cloud data")
+            manifest_entries.append(entry_payload)
+            continue
 
         write_point_cloud(
             point_cloud_path,

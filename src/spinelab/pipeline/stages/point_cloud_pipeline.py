@@ -4,8 +4,6 @@ import binascii
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
 import numpy as np
 from vtkmodules.util.numpy_support import vtk_to_numpy
 
@@ -138,13 +136,12 @@ def extract_vertebra_point_cloud(
         pad_count = target - surface_nets_vertex_count
         rng = np.random.default_rng(seed)
         pad_indices = rng.choice(surface_nets_vertex_count, size=pad_count)
-        points = np.asarray(
-            np.concatenate([vertices, vertices[pad_indices]], axis=0), dtype=np.float32
-        )
-        normals = np.asarray(
-            np.concatenate([vertex_normals, vertex_normals[pad_indices]], axis=0),
-            dtype=np.float32,
-        )
+        points = np.empty((target, 3), dtype=np.float32)
+        points[:surface_nets_vertex_count] = vertices
+        points[surface_nets_vertex_count:] = vertices[pad_indices]
+        normals = np.empty((target, 3), dtype=np.float32)
+        normals[:surface_nets_vertex_count] = vertex_normals
+        normals[surface_nets_vertex_count:] = vertex_normals[pad_indices]
     else:
         points = np.asarray(vertices, dtype=np.float32)
         normals = np.asarray(vertex_normals, dtype=np.float32)
@@ -198,14 +195,15 @@ def write_point_cloud(
     display_label: str,
     coordinate_frame: str,
 ) -> None:
+    """Write point cloud NPZ with pickle-safe string metadata."""
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         path,
         points=np.asarray(points, dtype=np.float32),
         normals=np.asarray(normals, dtype=np.float32),
-        vertebra_id=np.asarray(vertebra_id),
-        structure_instance_id=np.asarray(structure_instance_id),
-        display_label=np.asarray(display_label),
-        standard_level_id=np.asarray(standard_level_id or ""),
-        coordinate_frame=np.asarray(coordinate_frame),
+        vertebra_id=np.array(vertebra_id.encode("utf-8")),
+        structure_instance_id=np.array(structure_instance_id.encode("utf-8")),
+        display_label=np.array(display_label.encode("utf-8")),
+        standard_level_id=np.array((standard_level_id or "").encode("utf-8")),
+        coordinate_frame=np.array(coordinate_frame.encode("utf-8")),
     )
