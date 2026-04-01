@@ -86,18 +86,8 @@ class WorkspacePage(QWidget):
         center_surface = QFrame()
         center_surface.setObjectName("SurfaceFrame")
         center_layout = QVBoxLayout(center_surface)
-        resolved_center_surface_padding = (
-            GEOMETRY.panel_padding
-            if center_surface_padding is None
-            else center_surface_padding
-        )
-        center_layout.setContentsMargins(
-            resolved_center_surface_padding,
-            resolved_center_surface_padding,
-            resolved_center_surface_padding,
-            resolved_center_surface_padding,
-        )
-        center_layout.setSpacing(GEOMETRY.unit)
+        center_layout.setContentsMargins(0, 0, 0, 0)
+        center_layout.setSpacing(GEOMETRY.viewport_gap)
         center_layout.addWidget(center_widget, stretch=1)
 
         self.outer_splitter.addWidget(left_panel)

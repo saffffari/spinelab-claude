@@ -33,21 +33,26 @@ QMainWindow {{
     background: {THEME_COLORS.shell_bg};
 }}
 
-QFrame#SurfaceFrame,
+QFrame#SurfaceFrame {{
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}}
+
 QFrame#PanelFrame {{
     background: {THEME_COLORS.panel_bg};
-    border: 0;
+    border: 1px solid {THEME_COLORS.border_soft};
     border-radius: {panel_radius}px;
 }}
 
 QFrame#PanelInner {{
-    background: {THEME_COLORS.panel_inner_bg};
+    background: transparent;
     border: 0;
     border-radius: {inner_radius}px;
 }}
 
 QFrame#NestedPanelInner {{
-    background: {THEME_COLORS.panel_inner_bg};
+    background: transparent;
     border: 0;
     border-radius: {nested_radius}px;
 }}
@@ -93,13 +98,13 @@ QFrame#ViewportOverlayFooter {{
 }}
 
 QFrame#ViewportOverlayGroup {{
-    background: {THEME_COLORS.viewport_overlay};
+    background: transparent;
     border: 0;
     border-radius: {button_radius}px;
 }}
 
 QFrame#CenterToolbarGroup {{
-    background: {THEME_COLORS.panel_inner_bg};
+    background: transparent;
     border: 0;
     border-radius: {button_radius}px;
 }}
@@ -118,7 +123,7 @@ QFrame#ViewportFallback,
 QFrame#ViewportCardFrame {{
     background: {THEME_COLORS.viewport_bg};
     border: 0;
-    border-radius: {nested_radius}px;
+    border-radius: {inner_radius}px;
 }}
 
 QFrame#PendingAnalysisViewport {{
@@ -237,7 +242,7 @@ QFrame#SurfaceFrame QLabel[role="panel-title"] {{
 QFrame#PanelInner QLabel[role="panel-title"],
 QFrame#PanelInner QLabel[role="body-emphasis"],
 QFrame#PanelInner QLabel[role="body"] {{
-    color: {THEME_COLORS.text_secondary};
+    color: {THEME_COLORS.text_primary};
 }}
 
 QLabel[role="header-meta"] {{
@@ -281,7 +286,7 @@ QToolButton {{
 
 QPushButton:hover,
 QToolButton:hover {{
-    background: {THEME_COLORS.panel_inner_bg};
+    background: {THEME_COLORS.viewport_overlay};
 }}
 
 QPushButton#HeaderWorkspaceTabButton {{
@@ -311,7 +316,8 @@ QToolButton#HeaderMenuButton::menu-indicator {{
 
 QPushButton[majorButton="true"] {{
     min-height: {GEOMETRY.major_button_height}px;
-    background: {THEME_COLORS.viewport_overlay};
+    background: transparent;
+    border: 1px solid {THEME_COLORS.border_soft};
     color: {THEME_COLORS.text_primary};
     text-align: left;
     padding-left: {GEOMETRY.unit * 2}px;
@@ -766,17 +772,19 @@ QScrollBar:horizontal {{
 }}
 
 QScrollBar:vertical {{
-    width: 12px;
+    width: 8px;
 }}
 
 QScrollBar:horizontal {{
-    height: 12px;
+    height: 8px;
 }}
 
 QScrollBar::handle:vertical,
 QScrollBar::handle:horizontal {{
     background: {THEME_COLORS.scrollbar_thumb};
-    border-radius: 6px;
+    border-radius: 4px;
+    min-height: 24px;
+    min-width: 24px;
 }}
 
 QScrollBar::add-line,

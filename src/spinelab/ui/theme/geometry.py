@@ -28,9 +28,9 @@ class GeometryTokens:
     turbo_slider_height: int = 56
     toolbar_control_size: int = 24
     major_button_height: int = 44
-    radius_window: int = 24
-    radius_panel: int = 20
-    radius_inner: int = 12
+    radius_window: int = 12
+    radius_panel: int = 12
+    radius_inner: int = 8
     splitter_handle: int = 6
     overlay_gap: int = 8
     overlay_slider_width: int = 96
@@ -44,7 +44,7 @@ class GeometryTokens:
 
     @property
     def panel_padding(self) -> int:
-        return self.default_padding
+        return 12
 
     @property
     def inspector_padding(self) -> int:
@@ -56,7 +56,7 @@ class GeometryTokens:
 
     @property
     def viewport_gap(self) -> int:
-        return self.default_padding
+        return 6
 
     @property
     def overlay_padding(self) -> int:

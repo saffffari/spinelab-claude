@@ -150,8 +150,13 @@ class MainWindow(QMainWindow):
         self._publish_render_backend_state()
 
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowTitle("SpineLab 0.2")
         self.resize(1680, 1080)
+
+        from spinelab.ui.platform.win32_dwm import enable_mica
+
+        enable_mica(int(self.winId()))
 
         central = QWidget()
         central_layout = QVBoxLayout(central)

@@ -25,3 +25,4 @@ output/
 .tmp-*/
 runs/
 docs/performance_review_2026-03-25.md
+*.zip
