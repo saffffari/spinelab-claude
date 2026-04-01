@@ -12,11 +12,17 @@ import nibabel as nib
 import numpy as np
 
 from spinelab.models.manifest import utc_now
-from spinelab.segmentation.bundles import SegmentationRuntimeModel
+from spinelab.segmentation.bundles import (
+    CompositeSubModelSpec,
+    SegmentationBundleCheckpoint,
+    SegmentationBundleInferenceSpec,
+    SegmentationRuntimeModel,
+)
 from spinelab.segmentation.process_control import run_tracked_segmentation_subprocess
 from spinelab.services.performance import PerformancePolicy, active_performance_policy
 
 DRIVER_ID_NNUNETV2 = "nnunetv2"
+DRIVER_ID_CADS_COMPOSITE = "cads-composite"
 DEFAULT_NNUNET_CONDA_ENV_NAME = "spinelab-nnunet-verse20-win"
 _ENVIRONMENT_ID_TO_CONDA_ENV = {
     "nnunet-verse20-win": DEFAULT_NNUNET_CONDA_ENV_NAME,
@@ -428,6 +434,173 @@ class NNUNetV2SegmentationDriver:
         )
 
 
+class CADSCompositeSegmentationDriver:
+    """Runs multiple CADS nnU-Net task models and merges their predictions."""
+
+    driver_id = DRIVER_ID_CADS_COMPOSITE
+
+    def __init__(self, *, preprocessing_workers: int = 2, export_workers: int = 2) -> None:
+        self._inner_driver = NNUNetV2SegmentationDriver(
+            preprocessing_workers=preprocessing_workers,
+            export_workers=export_workers,
+        )
+
+    def predict(
+        self,
+        normalized_volume_path: Path,
+        runtime_model: SegmentationRuntimeModel,
+        working_dir: Path,
+        *,
+        device: str,
+        continue_prediction: bool = False,
+        disable_tta: bool = False,
+        tile_step_size: float = 0.5,
+    ) -> PredictionBatchResult:
+        return self.predict_batch(
+            (normalized_volume_path,),
+            runtime_model,
+            working_dir,
+            device=device,
+            continue_prediction=continue_prediction,
+            disable_tta=disable_tta,
+            tile_step_size=tile_step_size,
+        )
+
+    def predict_batch(
+        self,
+        normalized_volume_paths: tuple[Path, ...],
+        runtime_model: SegmentationRuntimeModel,
+        working_dir: Path,
+        *,
+        device: str,
+        continue_prediction: bool = False,
+        disable_tta: bool = False,
+        tile_step_size: float = 0.5,
+    ) -> PredictionBatchResult:
+        if not runtime_model.sub_models:
+            raise SegmentationDriverError(
+                f"Composite driver requires sub_models but bundle {runtime_model.model_id} has none."
+            )
+
+        started_at_utc = utc_now()
+        all_task_results: list[tuple[CompositeSubModelSpec, PredictionBatchResult]] = []
+
+        for sub_model_spec in runtime_model.sub_models:
+            task_working_dir = working_dir / f"task_{sub_model_spec.dataset_name}"
+            task_runtime_model = _build_sub_runtime_model(
+                parent=runtime_model,
+                spec=sub_model_spec,
+            )
+            result = self._inner_driver.predict_batch(
+                normalized_volume_paths,
+                task_runtime_model,
+                task_working_dir,
+                device=device,
+                continue_prediction=continue_prediction,
+                disable_tta=disable_tta,
+                tile_step_size=tile_step_size,
+            )
+            all_task_results.append((sub_model_spec, result))
+
+        merged_prediction_dir = working_dir / "merged_predictions"
+        merged_prediction_dir.mkdir(parents=True, exist_ok=True)
+
+        merged_outputs: list[PredictionOutput] = []
+        first_result = all_task_results[0][1]
+
+        for output_idx, first_output in enumerate(first_result.outputs):
+            case_id = first_output.case_id
+            reference_image = cast(nib.Nifti1Image, nib.load(str(first_output.prediction_path)))
+            merged = np.zeros(reference_image.shape[:3], dtype=np.int16)
+
+            for sub_spec, task_result in all_task_results:
+                task_output = task_result.outputs[output_idx]
+                task_image = cast(
+                    nib.Nifti1Image,
+                    nib.load(str(task_output.prediction_path)),
+                )
+                task_data = np.asarray(task_image.dataobj, dtype=np.int16)
+                for source_label, unified_label in sub_spec.label_cherry_pick.items():
+                    voxels = task_data == source_label
+                    if np.any(voxels):
+                        merged[voxels] = unified_label
+
+            merged_path = merged_prediction_dir / f"{case_id}.nii.gz"
+            nib.save(
+                nib.Nifti1Image(merged, reference_image.affine, reference_image.header),
+                str(merged_path),
+            )
+            merged_outputs.append(
+                PredictionOutput(
+                    case_id=case_id,
+                    source_path=first_output.source_path,
+                    staged_input_path=first_output.staged_input_path,
+                    prediction_path=merged_path,
+                    diagnostics_path=None,
+                )
+            )
+
+        finished_at_utc = utc_now()
+        task_names = [spec.dataset_name for spec, _ in all_task_results]
+        return PredictionBatchResult(
+            working_dir=working_dir,
+            staged_input_dir=first_result.staged_input_dir,
+            prediction_dir=merged_prediction_dir,
+            command=("cads-composite", *task_names),
+            log_path=None,
+            device=device,
+            outputs=tuple(merged_outputs),
+            started_at_utc=started_at_utc,
+            finished_at_utc=finished_at_utc,
+            stdout=f"Merged {len(all_task_results)} CADS task models",
+            stderr="",
+        )
+
+
+def _build_sub_runtime_model(
+    *,
+    parent: SegmentationRuntimeModel,
+    spec: CompositeSubModelSpec,
+) -> SegmentationRuntimeModel:
+    """Build a single-task SegmentationRuntimeModel for the inner nnU-Net driver."""
+    inference_spec = SegmentationBundleInferenceSpec(
+        dataset_id=int(spec.dataset_name.split("_")[0].removeprefix("Dataset")),
+        dataset_name=spec.dataset_name.split("_", 1)[1] if "_" in spec.dataset_name else spec.dataset_name,
+        trainer_name=spec.trainer_name,
+        plan_name=spec.plan_name,
+        configuration=spec.configuration,
+    )
+    trainer_dir_name = f"{spec.trainer_name}__{spec.plan_name}__{spec.configuration}"
+    checkpoint_path = (
+        parent.runtime_results_root
+        / spec.dataset_name
+        / trainer_dir_name
+        / f"fold_{spec.fold}"
+        / spec.checkpoint_name
+    )
+    checkpoint = SegmentationBundleCheckpoint(
+        checkpoint_id=f"fold-{spec.fold}:{spec.checkpoint_name.removesuffix('.pth')}",
+        fold=spec.fold,
+        checkpoint_name=spec.checkpoint_name,
+        relative_path=str(checkpoint_path.relative_to(parent.runtime_results_root.parent)),
+    )
+    identity_mapping = {str(i): i for i in spec.label_cherry_pick}
+    return SegmentationRuntimeModel(
+        model_id=f"{parent.model_id}:{spec.dataset_name}",
+        display_name=f"{parent.display_name} ({spec.dataset_name})",
+        family=parent.family,
+        driver_id=DRIVER_ID_NNUNETV2,
+        environment_id=parent.environment_id,
+        modality=parent.modality,
+        inference_spec=inference_spec,
+        checkpoint=checkpoint,
+        runtime_results_root=parent.runtime_results_root,
+        checkpoint_path=checkpoint_path,
+        label_mapping=identity_mapping,
+        provenance=parent.provenance,
+    )
+
+
 def resolve_segmentation_driver(
     driver_id: str,
     *,
@@ -436,6 +609,11 @@ def resolve_segmentation_driver(
     policy = performance_policy or active_performance_policy()
     if driver_id == DRIVER_ID_NNUNETV2:
         return NNUNetV2SegmentationDriver(
+            preprocessing_workers=policy.nnunet_preprocess_workers,
+            export_workers=policy.nnunet_export_workers,
+        )
+    if driver_id == DRIVER_ID_CADS_COMPOSITE:
+        return CADSCompositeSegmentationDriver(
             preprocessing_workers=policy.nnunet_preprocess_workers,
             export_workers=policy.nnunet_export_workers,
         )

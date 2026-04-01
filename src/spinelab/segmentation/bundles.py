@@ -12,6 +12,15 @@ from pathlib import Path
 from spinelab.io import CaseStore
 from spinelab.models.manifest import utc_now
 from spinelab.ontology import STANDARD_STRUCTURES
+from spinelab.segmentation.cads import (
+    CADS_DRIVER_ID,
+    CADS_ENVIRONMENT_ID,
+    CADS_FAMILY,
+    CADS_SKELETON_BUNDLE_ID,
+    CADS_SKELETON_DISPLAY_NAME,
+    CADS_SKELETON_PLUS_BUNDLE_ID,
+    CADS_SKELETON_PLUS_DISPLAY_NAME,
+)
 from spinelab.services import SettingsService
 
 DEFAULT_NNUNET_FAMILY = "nnunet-verse20-resenc"
@@ -45,6 +54,8 @@ DEFAULT_LABEL_MAPPING = {
 }
 DEBUG_ONLY_SEGMENTATION_BACKEND_IDS: frozenset[str] = frozenset()
 PRODUCTION_SEGMENTATION_BACKEND_PRIORITY = (
+    CADS_SKELETON_BUNDLE_ID,
+    CADS_SKELETON_PLUS_BUNDLE_ID,
     DEFAULT_PRODUCTION_BUNDLE_ID,
 )
 
@@ -210,6 +221,22 @@ KNOWN_SEGMENTATION_BACKENDS = (
         environment_id=DEFAULT_NNUNET_ENVIRONMENT_ID,
         description="Local VERSe20 residual-encoder fold 1 bundle.",
     ),
+    KnownSegmentationBackend(
+        backend_id=CADS_SKELETON_BUNDLE_ID,
+        display_name=CADS_SKELETON_DISPLAY_NAME,
+        family=CADS_FAMILY,
+        driver_id=CADS_DRIVER_ID,
+        environment_id=CADS_ENVIRONMENT_ID,
+        description="CADS full skeleton: vertebrae, ribs, appendicular bones, sternum, spinal canal (61 classes, 4 models).",
+    ),
+    KnownSegmentationBackend(
+        backend_id=CADS_SKELETON_PLUS_BUNDLE_ID,
+        display_name=CADS_SKELETON_PLUS_DISPLAY_NAME,
+        family=CADS_FAMILY,
+        driver_id=CADS_DRIVER_ID,
+        environment_id=CADS_ENVIRONMENT_ID,
+        description="CADS skeleton + vasculature + spinal cord (68 classes, 7 models).",
+    ),
 )
 
 
@@ -288,6 +315,20 @@ class SegmentationBundleCheckpoint:
 
 
 @dataclass(frozen=True, slots=True)
+class CompositeSubModelSpec:
+    """One sub-model within a CADS composite bundle."""
+
+    dataset_name: str
+    trainer_name: str
+    plan_name: str
+    configuration: str
+    fold: str
+    checkpoint_name: str
+    label_cherry_pick: dict[int, int]
+    """Source label index → unified output label."""
+
+
+@dataclass(frozen=True, slots=True)
 class SegmentationRuntimeModel:
     model_id: str
     display_name: str
@@ -301,6 +342,7 @@ class SegmentationRuntimeModel:
     checkpoint_path: Path
     label_mapping: dict[str, int]
     provenance: dict[str, str]
+    sub_models: tuple[CompositeSubModelSpec, ...] = ()
 
     @property
     def runtime_bundle_root(self) -> Path:
@@ -330,6 +372,7 @@ class InstalledSegmentationBundle:
     provenance: dict[str, str]
     runtime_root: str
     bundle_dir: Path
+    sub_models: tuple[CompositeSubModelSpec, ...] = ()
 
     @property
     def manifest_path(self) -> Path:
@@ -363,6 +406,7 @@ class InstalledSegmentationBundle:
             checkpoint_path=checkpoint_path,
             label_mapping=dict(self.label_mapping),
             provenance=dict(self.provenance),
+            sub_models=self.sub_models,
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -380,6 +424,8 @@ class InstalledSegmentationBundle:
             "provenance": dict(self.provenance),
             "runtime_root": self.runtime_root,
         }
+        if self.sub_models:
+            payload["sub_models"] = [asdict(spec) for spec in self.sub_models]
         return payload
 
     @classmethod
@@ -426,7 +472,37 @@ class InstalledSegmentationBundle:
             provenance=provenance,
             runtime_root=str(payload.get("runtime_root", DEFAULT_NNUNET_RUNTIME_ROOT)),
             bundle_dir=bundle_dir,
+            sub_models=_parse_sub_models(payload.get("sub_models")),
         )
+
+
+def _parse_sub_models(raw: object) -> tuple[CompositeSubModelSpec, ...]:
+    if not isinstance(raw, list):
+        return ()
+    specs: list[CompositeSubModelSpec] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        raw_cherry_pick = item.get("label_cherry_pick", {})
+        cherry_pick: dict[int, int] = {}
+        if isinstance(raw_cherry_pick, dict):
+            for source, target in raw_cherry_pick.items():
+                try:
+                    cherry_pick[int(source)] = int(target)
+                except (TypeError, ValueError):
+                    continue
+        specs.append(
+            CompositeSubModelSpec(
+                dataset_name=str(item.get("dataset_name", "")),
+                trainer_name=str(item.get("trainer_name", "")),
+                plan_name=str(item.get("plan_name", "")),
+                configuration=str(item.get("configuration", "")),
+                fold=str(item.get("fold", "")),
+                checkpoint_name=str(item.get("checkpoint_name", "")),
+                label_cherry_pick=cherry_pick,
+            )
+        )
+    return tuple(specs)
 
 
 class SegmentationBundleRegistry:
