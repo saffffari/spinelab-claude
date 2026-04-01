@@ -23,26 +23,14 @@ from spinelab.segmentation.cads import (
 )
 from spinelab.services import SettingsService
 
-DEFAULT_NNUNET_FAMILY = "nnunet-verse20-resenc"
-DEFAULT_NNUNET_ENVIRONMENT_ID = "nnunet-verse20-win"
 DEFAULT_NNUNET_RUNTIME_ROOT = "nnunet_results"
 DEFAULT_NNUNET_RAW_ROOT = "nnunet_raw"
 DEFAULT_NNUNET_PREPROCESSED_ROOT = "nnunet_preprocessed"
 DEFAULT_NNUNET_DRIVER_ID = "nnunetv2"
-DEFAULT_FOLD0_BUNDLE_ID = "verse20-resenc-fold0"
-DEFAULT_FOLD0_DISPLAY_NAME = "VERSe20 ResEnc Fold 0"
-DEFAULT_FOLD1_BUNDLE_ID = "verse20-resenc-fold1"
-DEFAULT_FOLD1_DISPLAY_NAME = "VERSe20 ResEnc Fold 1"
+DEFAULT_NNUNET_ENVIRONMENT_ID = "nnunet-verse20-win"
 DEFAULT_BUNDLE_MODALITY = "ct"
-DEFAULT_PRODUCTION_BUNDLE_ID = DEFAULT_FOLD0_BUNDLE_ID
 DEBUG_SEGMENTATION_BUNDLES_ENV_VAR = "SPINELAB_ENABLE_DEBUG_SEGMENTATION_BUNDLES"
 BUNDLE_MANIFEST_NAME = "bundle.json"
-DEFAULT_DISPLAY_NAME = "VERSe20 ResEnc Production"
-DEFAULT_LEGACY_TRAINER_ROOT = Path(
-    r"D:\dev\spinelab_data\nnunet\results"
-    r"\Dataset321_VERSE20Vertebrae"
-    r"\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres"
-)
 _CHECKPOINT_PRIORITY = {
     "checkpoint_final.pth": 0,
     "checkpoint_best.pth": 1,
@@ -56,7 +44,6 @@ DEBUG_ONLY_SEGMENTATION_BACKEND_IDS: frozenset[str] = frozenset()
 PRODUCTION_SEGMENTATION_BACKEND_PRIORITY = (
     CADS_SKELETON_BUNDLE_ID,
     CADS_SKELETON_PLUS_BUNDLE_ID,
-    DEFAULT_PRODUCTION_BUNDLE_ID,
 )
 
 
@@ -205,22 +192,6 @@ class KnownSegmentationBackend:
 
 
 KNOWN_SEGMENTATION_BACKENDS = (
-    KnownSegmentationBackend(
-        backend_id=DEFAULT_FOLD0_BUNDLE_ID,
-        display_name=DEFAULT_FOLD0_DISPLAY_NAME,
-        family=DEFAULT_NNUNET_FAMILY,
-        driver_id=DEFAULT_NNUNET_DRIVER_ID,
-        environment_id=DEFAULT_NNUNET_ENVIRONMENT_ID,
-        description="Local VERSe20 residual-encoder fold 0 bundle.",
-    ),
-    KnownSegmentationBackend(
-        backend_id=DEFAULT_FOLD1_BUNDLE_ID,
-        display_name=DEFAULT_FOLD1_DISPLAY_NAME,
-        family=DEFAULT_NNUNET_FAMILY,
-        driver_id=DEFAULT_NNUNET_DRIVER_ID,
-        environment_id=DEFAULT_NNUNET_ENVIRONMENT_ID,
-        description="Local VERSe20 residual-encoder fold 1 bundle.",
-    ),
     KnownSegmentationBackend(
         backend_id=CADS_SKELETON_BUNDLE_ID,
         display_name=CADS_SKELETON_DISPLAY_NAME,
@@ -460,7 +431,7 @@ class InstalledSegmentationBundle:
         inference_spec_payload = raw_inference_spec if isinstance(raw_inference_spec, dict) else {}
         return cls(
             bundle_id=str(payload.get("bundle_id", bundle_dir.name)),
-            family=str(payload.get("family", DEFAULT_NNUNET_FAMILY)),
+            family=str(payload.get("family", CADS_FAMILY)),
             display_name=str(payload.get("display_name", bundle_dir.name)),
             environment_id=str(payload.get("environment_id", DEFAULT_NNUNET_ENVIRONMENT_ID)),
             driver_id=str(payload.get("driver_id", DEFAULT_NNUNET_DRIVER_ID)),
@@ -789,28 +760,7 @@ def known_segmentation_backend(backend_id: str) -> KnownSegmentationBackend:
 def identify_known_backend_id(
     bundle: InstalledSegmentationBundle,
 ) -> str | None:
-    canonical_bundle_id = _canonical_backend_id(bundle.bundle_id)
-    if canonical_bundle_id is not None:
-        return canonical_bundle_id
-
-    if (
-        bundle.driver_id != DEFAULT_NNUNET_DRIVER_ID
-        or bundle.family != DEFAULT_NNUNET_FAMILY
-    ):
-        return None
-
-    fold_tokens = " ".join(
-        (
-            bundle.bundle_id.lower(),
-            bundle.display_name.lower(),
-            bundle.active_checkpoint_id.lower(),
-        )
-    )
-    if re.search(r"\bfold(?:[-\s]?0)\b", fold_tokens):
-        return DEFAULT_FOLD0_BUNDLE_ID
-    if re.search(r"\bfold(?:[-\s]?1)\b", fold_tokens):
-        return DEFAULT_FOLD1_BUNDLE_ID
-    return None
+    return _canonical_backend_id(bundle.bundle_id)
 
 
 def map_installed_bundles_to_known_backends(
@@ -827,185 +777,3 @@ def map_installed_bundles_to_known_backends(
         ):
             mapped[backend_id] = bundle
     return mapped
-
-
-def build_legacy_nnunet_runtime_model(
-    *,
-    results_root: Path,
-    dataset_id: int,
-    dataset_name: str,
-    trainer_name: str,
-    plan_name: str,
-    configuration: str,
-    fold: str,
-    checkpoint_name: str,
-    display_name: str = DEFAULT_DISPLAY_NAME,
-    family: str = DEFAULT_NNUNET_FAMILY,
-    environment_id: str = DEFAULT_NNUNET_ENVIRONMENT_ID,
-    driver_id: str = DEFAULT_NNUNET_DRIVER_ID,
-    label_mapping: dict[str, int] | None = None,
-) -> SegmentationRuntimeModel:
-    runtime_results_root = results_root.resolve()
-    dataset_dir = runtime_results_root / f"Dataset{dataset_id:03d}_{dataset_name}"
-    trainer_dir = dataset_dir / f"{trainer_name}__{plan_name}__{configuration}"
-    checkpoint_path = trainer_dir / f"fold_{fold}" / checkpoint_name
-    if not checkpoint_path.exists():
-        raise FileNotFoundError(f"Missing nnU-Net checkpoint for inference: {checkpoint_path}")
-    checkpoint_id = f"fold-{fold}:{checkpoint_name.removesuffix('.pth')}"
-    return SegmentationRuntimeModel(
-        model_id=f"legacy-{dataset_id:03d}-{trainer_name}-{plan_name}-{configuration}",
-        display_name=display_name,
-        family=family,
-        driver_id=driver_id,
-        environment_id=environment_id,
-        modality=DEFAULT_BUNDLE_MODALITY,
-        inference_spec=SegmentationBundleInferenceSpec(
-            dataset_id=dataset_id,
-            dataset_name=dataset_name,
-            trainer_name=trainer_name,
-            plan_name=plan_name,
-            configuration=configuration,
-        ),
-        checkpoint=SegmentationBundleCheckpoint(
-            checkpoint_id=checkpoint_id,
-            fold=str(fold),
-            checkpoint_name=checkpoint_name,
-            relative_path=str(checkpoint_path.relative_to(runtime_results_root)),
-        ),
-        runtime_results_root=runtime_results_root,
-        checkpoint_path=checkpoint_path,
-        label_mapping=dict(label_mapping or DEFAULT_LABEL_MAPPING),
-        provenance={
-            "source": "legacy-results-root",
-            "source_results_root": str(runtime_results_root),
-        },
-    )
-
-
-def install_nnunet_bundle(
-    *,
-    store: CaseStore,
-    source_results_root: Path,
-    bundle_id: str,
-    active_checkpoint_id: str | None = None,
-    display_name: str = DEFAULT_DISPLAY_NAME,
-    activate: bool = False,
-    settings: SettingsService | None = None,
-    family: str = DEFAULT_NNUNET_FAMILY,
-    environment_id: str = DEFAULT_NNUNET_ENVIRONMENT_ID,
-    driver_id: str = DEFAULT_NNUNET_DRIVER_ID,
-    modality: str = DEFAULT_BUNDLE_MODALITY,
-    runtime_root: str = DEFAULT_NNUNET_RUNTIME_ROOT,
-) -> InstalledSegmentationBundle:
-    sanitized_bundle_id = _normalize_bundle_id(bundle_id)
-    if not sanitized_bundle_id:
-        raise ValueError("Bundle id must contain at least one alphanumeric character.")
-
-    registry = SegmentationBundleRegistry(store, settings=settings)
-    registry.ensure_root()
-
-    source_trainer_root = _resolve_nnunet_trainer_root(source_results_root)
-    dataset_dir = source_trainer_root.parent
-    if not dataset_dir.name.startswith("Dataset"):
-        raise ValueError(
-            f"Trainer root must live under a Dataset### directory. Got: {source_trainer_root}"
-        )
-
-    target_bundle_dir = registry.bundle_dir(sanitized_bundle_id)
-    if target_bundle_dir.exists():
-        raise FileExistsError(f"Segmentation bundle already exists: {sanitized_bundle_id}")
-
-    target_runtime_root = (
-        target_bundle_dir / runtime_root / dataset_dir.name / source_trainer_root.name
-    )
-    shutil.copytree(
-        source_trainer_root,
-        target_runtime_root,
-        copy_function=_copy_file_or_hardlink,
-    )
-    (target_bundle_dir / DEFAULT_NNUNET_RAW_ROOT).mkdir(parents=True, exist_ok=True)
-    (target_bundle_dir / DEFAULT_NNUNET_PREPROCESSED_ROOT).mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    checkpoints = _detect_checkpoints(bundle_dir=target_bundle_dir, trainer_dir=target_runtime_root)
-    inference_spec = SegmentationBundleInferenceSpec(
-        dataset_id=int(dataset_dir.name[7:10]),
-        dataset_name=dataset_dir.name.split("_", 1)[1],
-        trainer_name=source_trainer_root.name.split("__", 1)[0],
-        plan_name=source_trainer_root.name.split("__", 2)[1],
-        configuration=source_trainer_root.name.rsplit("__", 1)[1],
-    )
-    bundle = InstalledSegmentationBundle(
-        bundle_id=sanitized_bundle_id,
-        family=family,
-        display_name=display_name,
-        environment_id=environment_id,
-        driver_id=driver_id,
-        modality=modality,
-        inference_spec=inference_spec,
-        checkpoints=checkpoints,
-        active_checkpoint_id=_resolve_active_checkpoint_id(checkpoints, active_checkpoint_id),
-        label_mapping=dict(DEFAULT_LABEL_MAPPING),
-        provenance={
-            "installed_at_utc": utc_now(),
-            "source_results_root": str(source_trainer_root.resolve()),
-            "installer": "tools/install_segmentation_bundle.py",
-        },
-        runtime_root=runtime_root,
-        bundle_dir=target_bundle_dir,
-    )
-    target_bundle_dir.mkdir(parents=True, exist_ok=True)
-    bundle.manifest_path.write_text(json.dumps(bundle.to_dict(), indent=2), encoding="utf-8")
-
-    if activate:
-        registry.set_active_bundle_id(bundle.bundle_id)
-
-    return bundle
-
-
-def install_known_segmentation_backend(
-    *,
-    store: CaseStore,
-    backend_id: str,
-    activate: bool = False,
-    settings: SettingsService | None = None,
-    source_results_root: Path = DEFAULT_LEGACY_TRAINER_ROOT,
-) -> InstalledSegmentationBundle:
-    backend = known_segmentation_backend(backend_id)
-    if backend.backend_id == DEFAULT_FOLD0_BUNDLE_ID:
-        return install_nnunet_bundle(
-            store=store,
-            source_results_root=source_results_root,
-            bundle_id=backend.backend_id,
-            active_checkpoint_id=_resolve_fold_checkpoint_id(
-                source_results_root=source_results_root,
-                fold="0",
-            ),
-            display_name=backend.display_name,
-            activate=activate,
-            settings=settings,
-            family=backend.family,
-            environment_id=backend.environment_id,
-            driver_id=backend.driver_id,
-            modality=backend.modality,
-        )
-    if backend.backend_id == DEFAULT_FOLD1_BUNDLE_ID:
-        return install_nnunet_bundle(
-            store=store,
-            source_results_root=source_results_root,
-            bundle_id=backend.backend_id,
-            active_checkpoint_id=_resolve_fold_checkpoint_id(
-                source_results_root=source_results_root,
-                fold="1",
-            ),
-            display_name=backend.display_name,
-            activate=activate,
-            settings=settings,
-            family=backend.family,
-            environment_id=backend.environment_id,
-            driver_id=backend.driver_id,
-            modality=backend.modality,
-        )
-    raise ValueError(f"Unsupported segmentation backend installer: {backend.backend_id}")
