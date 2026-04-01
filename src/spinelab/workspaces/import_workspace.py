@@ -778,7 +778,7 @@ class ImportWorkspace(WorkspacePage):
         *,
         pipeline: PipelineOrchestrator | None = None,
         on_manifest_updated: Callable[[CaseManifest], None] | None = None,
-        on_analysis_status_changed: Callable[[str, bool], None] | None = None,
+        on_analysis_status_changed: Callable[[str, bool, float], None] | None = None,
     ) -> None:
         self._manifest = manifest
         self._workspace_settings = settings
@@ -1739,7 +1739,9 @@ class ImportWorkspace(WorkspacePage):
             active=True,
             spinner_active=True,
         )
-        self._notify_analysis_status(format_analysis_progress_status(update), True)
+        self._notify_analysis_status(
+            format_analysis_progress_status(update), True, update.percent,
+        )
 
     def _handle_analysis_completed(self, manifest: CaseManifest) -> None:
         self._notify_analysis_status("Preparing review scene", True)
@@ -1806,10 +1808,12 @@ class ImportWorkspace(WorkspacePage):
     def _handle_lod_prewarm_finished(self) -> None:
         self._lod_prewarm_thread = None
 
-    def _notify_analysis_status(self, text: str, active: bool) -> None:
+    def _notify_analysis_status(
+        self, text: str, active: bool, percent: float = 0.0,
+    ) -> None:
         callback = self._on_analysis_status_changed
         if callback is not None:
-            callback(text, active)
+            callback(text, active, percent)
 
     def _auto_assign_imported_asset(self, asset: StudyAsset) -> str | None:
         role = suggested_import_role(self._manifest, asset)

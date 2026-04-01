@@ -6,6 +6,7 @@ import subprocess
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
+from collections.abc import Callable
 from typing import Protocol, cast
 
 import nibabel as nib
@@ -20,6 +21,8 @@ from spinelab.segmentation.bundles import (
 )
 from spinelab.segmentation.process_control import run_tracked_segmentation_subprocess
 from spinelab.services.performance import PerformancePolicy, active_performance_policy
+
+DriverProgressCallback = Callable[[float, str], None]
 
 DRIVER_ID_NNUNETV2 = "nnunetv2"
 DRIVER_ID_CADS_COMPOSITE = "cads-composite"
@@ -215,6 +218,7 @@ class SegmentationModelDriver(Protocol):
         continue_prediction: bool = False,
         disable_tta: bool = False,
         tile_step_size: float = 0.5,
+        progress_callback: DriverProgressCallback | None = None,
     ) -> PredictionBatchResult: ...
 
     def predict_batch(
@@ -227,6 +231,7 @@ class SegmentationModelDriver(Protocol):
         continue_prediction: bool = False,
         disable_tta: bool = False,
         tile_step_size: float = 0.5,
+        progress_callback: DriverProgressCallback | None = None,
     ) -> PredictionBatchResult: ...
 
 
@@ -247,6 +252,7 @@ class NNUNetV2SegmentationDriver:
         continue_prediction: bool = False,
         disable_tta: bool = False,
         tile_step_size: float = 0.5,
+        progress_callback: DriverProgressCallback | None = None,
     ) -> PredictionBatchResult:
         return self.predict_batch(
             (normalized_volume_path,),
@@ -256,6 +262,7 @@ class NNUNetV2SegmentationDriver:
             continue_prediction=continue_prediction,
             disable_tta=disable_tta,
             tile_step_size=tile_step_size,
+            progress_callback=progress_callback,
         )
 
     def predict_batch(
@@ -268,6 +275,7 @@ class NNUNetV2SegmentationDriver:
         continue_prediction: bool = False,
         disable_tta: bool = False,
         tile_step_size: float = 0.5,
+        progress_callback: DriverProgressCallback | None = None,
     ) -> PredictionBatchResult:
         if runtime_model.driver_id != self.driver_id:
             raise SegmentationDriverError(
@@ -455,6 +463,7 @@ class CADSCompositeSegmentationDriver:
         continue_prediction: bool = False,
         disable_tta: bool = False,
         tile_step_size: float = 0.5,
+        progress_callback: DriverProgressCallback | None = None,
     ) -> PredictionBatchResult:
         return self.predict_batch(
             (normalized_volume_path,),
@@ -464,6 +473,7 @@ class CADSCompositeSegmentationDriver:
             continue_prediction=continue_prediction,
             disable_tta=disable_tta,
             tile_step_size=tile_step_size,
+            progress_callback=progress_callback,
         )
 
     def predict_batch(
@@ -476,6 +486,7 @@ class CADSCompositeSegmentationDriver:
         continue_prediction: bool = False,
         disable_tta: bool = False,
         tile_step_size: float = 0.5,
+        progress_callback: DriverProgressCallback | None = None,
     ) -> PredictionBatchResult:
         if not runtime_model.sub_models:
             raise SegmentationDriverError(
@@ -484,8 +495,14 @@ class CADSCompositeSegmentationDriver:
 
         started_at_utc = utc_now()
         all_task_results: list[tuple[CompositeSubModelSpec, PredictionBatchResult]] = []
+        total_sub_models = len(runtime_model.sub_models)
 
-        for sub_model_spec in runtime_model.sub_models:
+        for sub_model_index, sub_model_spec in enumerate(runtime_model.sub_models):
+            if progress_callback is not None:
+                progress_callback(
+                    sub_model_index / total_sub_models,
+                    f"Task {sub_model_index + 1}/{total_sub_models}: {sub_model_spec.dataset_name}",
+                )
             task_working_dir = working_dir / f"task_{sub_model_spec.dataset_name}"
             task_runtime_model = _build_sub_runtime_model(
                 parent=runtime_model,
@@ -501,6 +518,9 @@ class CADSCompositeSegmentationDriver:
                 tile_step_size=tile_step_size,
             )
             all_task_results.append((sub_model_spec, result))
+
+        if progress_callback is not None:
+            progress_callback(1.0, "Merging predictions")
 
         merged_prediction_dir = working_dir / "merged_predictions"
         merged_prediction_dir.mkdir(parents=True, exist_ok=True)

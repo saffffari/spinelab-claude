@@ -716,7 +716,7 @@ def test_import_workspace_analyze_runs_pipeline_and_notifies(
         on_manifest_updated=lambda updated_manifest: callback_payload.append(
             updated_manifest.case_id
         ),
-        on_analysis_status_changed=lambda text, active: status_payload.append((text, active)),
+        on_analysis_status_changed=lambda text, active, percent=0.0: status_payload.append((text, active)),
     )
     qtbot.addWidget(workspace)
     workspace._refresh_comparison_buttons()  # pyright: ignore[reportPrivateUsage]
@@ -838,7 +838,7 @@ def test_import_workspace_keeps_failed_progress_visible_until_next_run(
         on_manifest_updated=lambda updated_manifest: callback_payload.append(
             updated_manifest.case_id
         ),
-        on_analysis_status_changed=lambda text, active: status_payload.append((text, active)),
+        on_analysis_status_changed=lambda text, active, percent=0.0: status_payload.append((text, active)),
     )
     qtbot.addWidget(workspace)
     workspace._refresh_comparison_buttons()  # pyright: ignore[reportPrivateUsage]

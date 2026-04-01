@@ -376,6 +376,7 @@ class LoadingCapsule(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._active = False
         self._phase = 0.0
+        self._percent = 0.0
         self._preferred_width = GEOMETRY.sidebar_min
         self._timer = QTimer(self)
         self._timer.setInterval(22)
@@ -390,11 +391,17 @@ class LoadingCapsule(QWidget):
         else:
             self._timer.stop()
             self._phase = 0.0
+            self._percent = 0.0
+        self.update()
+
+    def set_percent(self, percent: float) -> None:
+        self._percent = max(0.0, min(100.0, float(percent)))
         self.update()
 
     def _advance_phase(self) -> None:
         self._phase = (self._phase + 0.035) % 1.35
-        self.update()
+        if self._percent <= 0:
+            self.update()
 
     def track_color_css(self) -> str:
         return THEME_COLORS.info_soft
@@ -420,6 +427,13 @@ class LoadingCapsule(QWidget):
         painter.drawRoundedRect(rect, radius, radius)
 
         if not self._active:
+            return
+
+        if self._percent > 0:
+            fill_width = max(1, int(round(rect.width() * (self._percent / 100.0))))
+            fill_rect = rect.adjusted(0, 0, fill_width - rect.width(), 0)
+            painter.setBrush(qcolor_from_css(self.fill_color_css()))
+            painter.drawRoundedRect(fill_rect, radius, radius)
             return
 
         segment_width = max(42, min(96, int(rect.width() * 0.28)))
@@ -453,11 +467,31 @@ class HeaderStatusStrip(QFrame):
         self._status_label.setObjectName("HeaderStatusLabel")
         apply_text_role(self._status_label, "meta")
         layout.addWidget(self._status_label)
+
+        self._eta_label = QLabel("")
+        self._eta_label.setObjectName("HeaderEtaLabel")
+        apply_text_role(self._eta_label, "meta")
+        self._eta_label.hide()
+        layout.addWidget(self._eta_label)
+
         self._update_progress_capsule_width()
 
     def set_status(self, text: str, *, active: bool) -> None:
         self._status_label.setText(text)
         self._progress_capsule.set_active(active)
+
+    def set_progress(self, percent: float, *, active: bool) -> None:
+        self._progress_capsule.set_active(active)
+        self._progress_capsule.set_percent(percent)
+        if active and percent > 0:
+            self._progress_capsule.show()
+        elif not active:
+            self._progress_capsule.hide()
+        self._update_progress_capsule_width()
+
+    def set_eta(self, text: str) -> None:
+        self._eta_label.setText(text)
+        self._eta_label.setVisible(bool(text))
 
     def set_progress_target_width(self, width: int) -> None:
         self._progress_target_width = max(0, int(width))

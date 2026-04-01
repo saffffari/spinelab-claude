@@ -571,11 +571,12 @@ def _run_production_segmentation(
         performance_policy=resolved_policy,
     )
     prediction_started_at = time.perf_counter()
-    _emit_segmentation_progress(
-        progress_callback,
-        0.60,
-        "Running backend prediction and export",
-    )
+
+    def _prediction_progress(fraction: float, detail: str) -> None:
+        mapped = 0.20 + (fraction * 0.65)
+        _emit_segmentation_progress(progress_callback, mapped, detail)
+
+    _emit_segmentation_progress(progress_callback, 0.20, "Starting backend prediction")
     with performance_coordinator().segmentation_slot():
         prediction_result = driver.predict(
             staged_volume_path,
@@ -584,6 +585,7 @@ def _run_production_segmentation(
             device=runtime_device,
             disable_tta=disable_tta,
             tile_step_size=tile_step_size,
+            progress_callback=_prediction_progress,
         )
     prediction_elapsed = time.perf_counter() - prediction_started_at
     prediction_output = prediction_result.outputs[0]
