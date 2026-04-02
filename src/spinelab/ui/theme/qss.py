@@ -629,7 +629,11 @@ QToolButton#AssetDeleteButton:disabled {{
     opacity: 0.4;
 }}
 
-QFrame#InspectorActionCard,
+QFrame#InspectorActionCard {{
+    background: transparent;
+    border: 0;
+}}
+
 QFrame#InspectorSummaryCard {{
     background: {THEME_COLORS.viewport_overlay};
     border: 0;

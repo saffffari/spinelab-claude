@@ -944,6 +944,7 @@ class ImportWorkspace(WorkspacePage):
                 tier.value.title(),
                 variant=_tier_variants.get(tier, "ghost"),
                 checkable=True,
+                major=True,
             )
             btn.setChecked(tier == self._active_precision_tier)
             btn.clicked.connect(lambda _checked, t=tier: self._handle_precision_tier_clicked(t))

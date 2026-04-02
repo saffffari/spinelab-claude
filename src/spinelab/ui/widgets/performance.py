@@ -88,7 +88,7 @@ class TurboModeButton(CapsuleButton):
         self._state = state
         self.setProperty("turboState", state)
         if state == "idle":
-            self.setText("Arm Turbo")
+            self.setText("Turbo")
             self.setToolTip(
                 "First click arms Turbo. Click again within 2 seconds to activate it."
             )

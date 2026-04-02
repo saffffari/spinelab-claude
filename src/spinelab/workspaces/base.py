@@ -39,7 +39,7 @@ class WorkspacePage(QWidget):
         self._saved_left_width = GEOMETRY.sidebar_min
         self._saved_right_width = GEOMETRY.inspector_min
         self._left_visible = True
-        self._right_visible = True
+        self._right_visible = False
         self._left_panel = left_panel
         self._right_panel = right_panel
         self._post_show_sync_pending = True
@@ -126,7 +126,7 @@ class WorkspacePage(QWidget):
         self._saved_right_width = max(right_width or shared_sidebar_width, GEOMETRY.inspector_min)
         self._left_visible, self._right_visible = self._settings.load_shell_sidebar_visibility(
             True,
-            True,
+            False,
         )
         self._normalize_sidebar_widths()
         self._settings.save_shell_sidebar_widths(
