@@ -3,8 +3,16 @@ from __future__ import annotations
 import math
 import time
 
-from PySide6.QtCore import QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QIcon, QPainter, QPaintEvent, QPen
+from PySide6.QtCore import QEasingCurve, QRectF, Qt, QTimer, QVariantAnimation, Signal
+from PySide6.QtGui import (
+    QColor,
+    QIcon,
+    QLinearGradient,
+    QPainter,
+    QPainterPath,
+    QPaintEvent,
+    QPen,
+)
 from PySide6.QtWidgets import QPushButton, QSizePolicy
 
 from spinelab.services.performance import PerformanceMode, canonical_performance_mode
@@ -13,19 +21,36 @@ from spinelab.ui.widgets.chrome import CapsuleButton, apply_text_role, major_but
 
 
 class TurboModeButton(CapsuleButton):
+    """Turbo mode toggle with a fighter-jet missile cover animation.
+
+    Idle:   Translucent red cover sits closed over the button.
+    Armed:  Cover flips open (perspective tilt upward), revealing the live button.
+    Active: Cover flips closed again; button glows danger-red while turbo is on.
+    """
+
     mode_changed = Signal(str)
 
     _ARM_TIMEOUT_MS = 2000
+    _FLIP_DURATION_MS = 280
 
     def __init__(self, mode: PerformanceMode | str = PerformanceMode.ADAPTIVE) -> None:
-        super().__init__("", major=True)
+        super().__init__("Turbo", major=True)
         self.setObjectName("TurboModeButton")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.setFixedWidth(GEOMETRY.turbo_button_width)
         self.setFixedHeight(GEOMETRY.major_button_height)
+        self.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self._mode = canonical_performance_mode(mode)
         self._state = ""
+
+        # Cover flip: 0.0 = closed, 1.0 = fully open
+        self._cover_phase = 0.0
+        self._flip_animation = QVariantAnimation(self)
+        self._flip_animation.setDuration(self._FLIP_DURATION_MS)
+        self._flip_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._flip_animation.valueChanged.connect(self._handle_flip_value)
+
         self._arm_timer = QTimer(self)
         self._arm_timer.setInterval(self._ARM_TIMEOUT_MS)
         self._arm_timer.setSingleShot(True)
@@ -87,28 +112,88 @@ class TurboModeButton(CapsuleButton):
     def _apply_state(self, state: str) -> None:
         self._state = state
         self.setProperty("turboState", state)
+        self.setText("Turbo")
         if state == "idle":
-            self.setText("Turbo")
-            self.setToolTip(
-                "First click arms Turbo. Click again within 2 seconds to activate it."
-            )
-            self.setAccessibleDescription(
-                "Turbo performance control. First click arms Turbo. "
-                "Second click within 2 seconds activates it."
-            )
+            self.setToolTip("Click to arm Turbo mode.")
+            self._animate_cover(target=0.0)
         elif state == "armed":
-            self.setText("Activate Turbo")
-            self.setToolTip("Turbo is armed. Click again within 2 seconds to activate it.")
-            self.setAccessibleDescription(
-                "Turbo performance control armed. Click again within 2 seconds to activate Turbo."
-            )
+            self.setToolTip("Turbo armed — click again to activate.")
+            self._animate_cover(target=1.0)
         else:
-            self.setText("Turbo Active")
-            self.setToolTip("Turbo is active. Click to restore Adaptive mode.")
-            self.setAccessibleDescription(
-                "Turbo performance control active. Click to restore Adaptive mode."
-            )
+            self.setToolTip("Turbo active — click to deactivate.")
+            self._animate_cover(target=0.0)
         self._refresh_style()
+
+    def _animate_cover(self, *, target: float) -> None:
+        self._flip_animation.stop()
+        self._flip_animation.setStartValue(self._cover_phase)
+        self._flip_animation.setEndValue(target)
+        self._flip_animation.start()
+
+    def _handle_flip_value(self, value: float) -> None:
+        self._cover_phase = float(value)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if self._state == "active" and self._cover_phase < 0.01:
+            return
+        self._paint_missile_cover()
+
+    def _paint_missile_cover(self) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+        w = float(self.width())
+        h = float(self.height())
+        radius = float(capsule_radius(int(h)))
+        openness = self._cover_phase
+
+        # Perspective foreshortening: as cover opens, it shrinks vertically
+        # and shifts upward, simulating a hinge at the top edge
+        visible_h = h * max(1.0 - openness, 0.0)
+        if visible_h < 1.0:
+            painter.end()
+            return
+
+        # Opacity fades as cover lifts
+        base_alpha = 0.55 if self._state != "active" else 0.70
+        alpha = base_alpha * max(1.0 - openness * 0.6, 0.0)
+
+        danger_color = qcolor_from_css(THEME_COLORS.danger)
+
+        # Gradient: darker at hinge (top), lighter at bottom edge
+        gradient = QLinearGradient(0.0, 0.0, 0.0, visible_h)
+        top_color = QColor(danger_color)
+        top_color.setAlphaF(alpha * 0.85)
+        bottom_color = QColor(danger_color)
+        bottom_color.setAlphaF(alpha)
+        gradient.setColorAt(0.0, top_color)
+        gradient.setColorAt(1.0, bottom_color)
+
+        # Draw cover as rounded rect matching the button shape
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(0.0, 0.0, w, visible_h), radius, radius)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(gradient)
+        painter.drawPath(path)
+
+        # Hazard stripes: thin diagonal lines across the cover
+        stripe_color = QColor(0, 0, 0, int(45 * max(1.0 - openness, 0.0)))
+        stripe_pen = QPen(stripe_color)
+        stripe_pen.setWidthF(1.5)
+        painter.setPen(stripe_pen)
+        painter.setClipPath(path)
+        stripe_spacing = 8.0
+        x = -visible_h
+        while x < w + visible_h:
+            painter.drawLine(
+                int(x), int(visible_h),
+                int(x + visible_h), 0,
+            )
+            x += stripe_spacing
+
+        painter.end()
 
     def _refresh_style(self) -> None:
         style = self.style()

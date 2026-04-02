@@ -901,11 +901,12 @@ def test_measurement_workspace_builds_primary_relative_motion_columns(qtbot) -> 
     )
 
 
-def test_measurement_workspace_shows_none_global_axis_without_primary(qtbot) -> None:
+def test_measurement_workspace_shows_default_primary_global_axis(qtbot) -> None:
     workspace = MeasurementWorkspace(CaseManifest.demo(), SettingsService())
     qtbot.addWidget(workspace)
 
-    assert workspace._global_axis_label.text() == "None"
+    # Demo scene has L1-L5; L5 is auto-selected as default primary
+    assert workspace._global_axis_label.text() == "L5 local Z"
 
 
 def test_measurement_workspace_clearing_selection_keeps_explicit_global_axis(qtbot) -> None:

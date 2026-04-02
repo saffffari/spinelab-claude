@@ -28,6 +28,8 @@ from PySide6.QtWidgets import (
 
 from spinelab.exports import export_measurement_bundle, write_measurements_pdf
 from spinelab.io import CaseStore
+from spinelab.segmentation.anatomy_groups import available_anatomy_groups
+from spinelab.ui.widgets.anatomy_tree import AnatomyExplorerTree
 from spinelab.models import CaseManifest, MetricRecord, VolumeMetadata
 from spinelab.pipeline.artifacts import read_json_artifact
 from spinelab.segmentation import summary_for_active_bundle, summary_for_manifest
@@ -137,8 +139,7 @@ class MeasurementSelectionButton(QToolButton):
         self.setText("")
         self.toggled.connect(lambda _checked: self.update())
 
-    def paintEvent(self, event) -> None:
-        super().paintEvent(event)
+    def paintEvent(self, event) -> None:  # noqa: ARG002
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         outer_inset = 1
@@ -375,6 +376,7 @@ class MeasurementWorkspace(WorkspacePage):
         self._standing_pose_visible = False
         self._viewport: SpineViewport3D
 
+        self._anatomy_tree = AnatomyExplorerTree()
         self._measurement_tree = MeasurementTree()
         self._measurement_tree.setColumnCount(3)
         self._measurement_tree.setEnabled(self._analysis_ready)
@@ -528,6 +530,7 @@ class MeasurementWorkspace(WorkspacePage):
         )
 
         self._connect_signals()
+        self._populate_anatomy_tree()
         self._populate_measurement_tree()
         self._populate_vertebra_buttons()
         self.apply_shared_display_state(
@@ -579,6 +582,7 @@ class MeasurementWorkspace(WorkspacePage):
             workspace_id="measurement",
             panel_id="left",
         )
+        panel.add_widget(self._anatomy_tree, stretch=1, title="Anatomy Explorer")
         panel.add_widget(self._measurement_tree, stretch=2, title="Measurement Explorer")
         panel.add_widget(self._build_vertebra_selection_section(), title="Vertebrae")
 
@@ -1114,6 +1118,21 @@ class MeasurementWorkspace(WorkspacePage):
         self._sync_orthographic_viewport_detail(self._viewport.current_detail_level())
         self._sync_orthographic_viewport_point_size(self._viewport.current_point_size())
         self._refresh_display_controls()
+
+    def _populate_anatomy_tree(self) -> None:
+        label_names = {model.vertebra_id for model in self._scene_models}
+        groups = available_anatomy_groups(label_names)
+        self._anatomy_tree.populate(groups)
+        self._anatomy_tree.visibility_changed.connect(
+            self._handle_anatomy_visibility_changed
+        )
+
+    def _handle_anatomy_visibility_changed(self, visible_labels: set[str]) -> None:
+        if hasattr(self, "_viewport"):
+            self._viewport.set_label_visibility(visible_labels)
+        for vp in getattr(self, "_orthographic_viewports", {}).values():
+            if hasattr(vp, "set_label_visibility"):
+                vp.set_label_visibility(visible_labels)
 
     def _populate_measurement_tree(self) -> None:
         self._measurement_tree.clear()
@@ -2068,6 +2087,16 @@ def refresh_widget_style(widget) -> None:
     widget.update()
 
 
+_PRIMARY_ID_PREFERENCE = (
+    "PELVIS",
+    "L5", "L4", "L3", "L2", "L1",
+    "T12", "T11", "T10", "T9", "T8", "T7",
+    "T6", "T5", "T4", "T3", "T2", "T1",
+    "C7", "C6", "C5", "C4", "C3", "C2", "C1",
+    "SACRUM",
+)
+
+
 def default_primary_id_for_lookup(
     reference_ids: Iterable[str],
     *,
@@ -2075,9 +2104,10 @@ def default_primary_id_for_lookup(
 ) -> str | None:
     if not has_model_scene:
         return None
-    normalized_ids = [reference_id.upper() for reference_id in reference_ids if reference_id]
-    if "PELVIS" in normalized_ids:
-        return "PELVIS"
+    normalized_ids = {reference_id.upper() for reference_id in reference_ids if reference_id}
+    for candidate in _PRIMARY_ID_PREFERENCE:
+        if candidate in normalized_ids:
+            return candidate
     return None
 
 

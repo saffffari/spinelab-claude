@@ -717,7 +717,7 @@ def test_header_text_elements_share_one_size_and_brand_uses_heaviest_weight(qtbo
         button.font().pointSize() == shared_point_size
         for button in window._workspace_buttons.values()
     )
-    assert brand_label.font().weight() == 500
+    assert brand_label.font().weight() == 600
 
 
 def test_workspace_tabs_use_dedicated_header_tab_buttons(qtbot) -> None:

@@ -293,7 +293,7 @@ class CollapsiblePanelSection(QFrame):
         self.header_layout = QHBoxLayout(self._header)
         self.header_layout.setContentsMargins(
             GEOMETRY.panel_padding,
-            GEOMETRY.panel_padding,
+            GEOMETRY.panel_padding // 2,
             GEOMETRY.panel_padding,
             0,
         )

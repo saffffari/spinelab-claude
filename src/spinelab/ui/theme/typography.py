@@ -33,10 +33,10 @@ TYPOGRAPHY = TypographyTokens(
     family_text="Segoe UI Variable Text",
     family_display="Segoe UI Variable Display",
     family_fallback="Segoe UI Variable, Segoe UI, system-ui, sans-serif",
-    weight_light=300,
-    weight_semilight=350,
-    weight_semibold=500,
-    weight_regular=400,
+    weight_light=350,
+    weight_semilight=400,
+    weight_semibold=600,
+    weight_regular=500,
 )
 
 TEXT_STYLES = {

@@ -535,6 +535,11 @@ class CADSCompositeSegmentationDriver:
 
             for sub_spec, task_result in all_task_results:
                 task_output = task_result.outputs[output_idx]
+                if not task_output.prediction_path.exists():
+                    raise SegmentationDriverError(
+                        f"Expected prediction file missing before merge: "
+                        f"{task_output.prediction_path}"
+                    )
                 task_image = cast(
                     nib.Nifti1Image,
                     nib.load(str(task_output.prediction_path)),

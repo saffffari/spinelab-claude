@@ -13,10 +13,12 @@ from .chrome import (
     apply_text_role,
     major_button_icon_size,
 )
+from .anatomy_tree import AnatomyExplorerTree
 from .performance import AnalyzeProgressButton, TurboModeButton
 from .splitters import TransparentSplitter, schedule_splitter_midpoint
 
 __all__ = [
+    "AnatomyExplorerTree",
     "AnalyzeProgressButton",
     "CapsuleButton",
     "CollapsiblePanelSection",

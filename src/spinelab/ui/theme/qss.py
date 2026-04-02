@@ -546,6 +546,12 @@ QToolButton#MeasurementCheckButton:checked {{
     color: {THEME_COLORS.focus};
 }}
 
+QToolButton#AnatomyEyeButton {{
+    background: transparent;
+    border: 0;
+    padding: 0;
+}}
+
 QListWidget::item {{
     padding: {GEOMETRY.unit}px;
     border-radius: {concentric_radius(inner_radius)}px;
@@ -590,7 +596,7 @@ QPushButton#ImportDropZone:hover {{
 QFrame#AssetRow {{
     background: {THEME_COLORS.viewport_overlay};
     border: 0;
-    border-radius: {inner_radius}px;
+    border-radius: 0;
 }}
 
 QWidget#AssetMetaPanel,

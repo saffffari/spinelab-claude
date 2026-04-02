@@ -47,7 +47,7 @@ CADS_ENVIRONMENT_ID = "cads-nnunet-win"
 #   60     Sternum (from task 556, source 11)
 #   61     Spinal canal (from task 556, source 1)
 #
-# Skeleton Plus adds (labels 62-69):
+# Skeleton Plus adds (labels 62-91):
 #   62     Aorta (from task 551, source 7)
 #   63     Inferior vena cava (from task 551, source 8)
 #   64     Iliac artery left (from task 553, source 10)
@@ -55,6 +55,19 @@ CADS_ENVIRONMENT_ID = "cads-nnunet-win"
 #   66     Iliac vein left (from task 553, source 12)
 #   67     Iliac vein right (from task 553, source 13)
 #   68     Spinal cord (from task 559, source 10)
+#   69-73  Lung lobes (from task 551, source 13-17)
+#   74     Esophagus (from task 551, source 18)
+#   75     Trachea (from task 551, source 19)
+#   76-80  Heart chambers + myocardium (from task 551, source 20-24)
+#   81     Pulmonary artery (from task 551, source 25)
+#   82     Spleen (from task 551, source 1)
+#   83-84  Kidneys L/R (from task 551, source 2-3)
+#   85     Gallbladder (from task 551, source 4)
+#   86     Liver (from task 551, source 5)
+#   87     Stomach (from task 551, source 6)
+#   88     Portal/splenic vein (from task 551, source 9)
+#   89     Pancreas (from task 551, source 10)
+#   90-91  Adrenal glands L/R (from task 551, source 11-12)
 # ---------------------------------------------------------------------------
 
 # -- Task 552: Vertebrae C1-L5 (source labels are L5=1 .. C1=24) ----------
@@ -138,11 +151,34 @@ _TASK_556_CHERRY_PICK: dict[int, int] = {
     1: 61,   # spinal_canal
 }
 
-# -- Task 551: Aorta + IVC (Plus only) ------------------------------------
+# -- Task 551: Organs (Plus only) ------------------------------------------
 
 _TASK_551_CHERRY_PICK: dict[int, int] = {
     7: 62,   # aorta
     8: 63,   # inferior_vena_cava
+    13: 69,  # lung_upper_lobe_left
+    14: 70,  # lung_lower_lobe_left
+    15: 71,  # lung_upper_lobe_right
+    16: 72,  # lung_middle_lobe_right
+    17: 73,  # lung_lower_lobe_right
+    18: 74,  # esophagus
+    19: 75,  # trachea
+    20: 76,  # heart_myocardium
+    21: 77,  # heart_atrium_left
+    22: 78,  # heart_ventricle_left
+    23: 79,  # heart_atrium_right
+    24: 80,  # heart_ventricle_right
+    25: 81,  # pulmonary_artery
+    1: 82,   # spleen
+    2: 83,   # kidney_right
+    3: 84,   # kidney_left
+    4: 85,   # gallbladder
+    5: 86,   # liver
+    6: 87,   # stomach
+    9: 88,   # portal_vein_and_splenic_vein
+    10: 89,  # pancreas
+    11: 90,  # adrenal_gland_right
+    12: 91,  # adrenal_gland_left
 }
 
 # -- Task 553: Iliac arteries/veins (Plus only) ---------------------------
@@ -251,6 +287,23 @@ CADS_SKELETON_PLUS_LABEL_MAPPING: dict[str, int] = {
     "iliac_vena_left": 66, "iliac_vena_right": 67,
     # Neural
     "spinal_cord": 68,
+    # Lungs
+    "lung_upper_lobe_left": 69, "lung_lower_lobe_left": 70,
+    "lung_upper_lobe_right": 71, "lung_middle_lobe_right": 72,
+    "lung_lower_lobe_right": 73,
+    # Airway
+    "esophagus": 74, "trachea": 75,
+    # Heart
+    "heart_myocardium": 76,
+    "heart_atrium_left": 77, "heart_ventricle_left": 78,
+    "heart_atrium_right": 79, "heart_ventricle_right": 80,
+    # Pulmonary vasculature
+    "pulmonary_artery": 81,
+    # Abdominal organs
+    "spleen": 82, "kidney_right": 83, "kidney_left": 84,
+    "gallbladder": 85, "liver": 86, "stomach": 87,
+    "portal_vein_and_splenic_vein": 88, "pancreas": 89,
+    "adrenal_gland_right": 90, "adrenal_gland_left": 91,
 }
 
 # ---------------------------------------------------------------------------
@@ -263,4 +316,4 @@ CADS_SKELETON_PLUS_BUNDLE_ID = "cads-skeleton-plus"
 CADS_SKELETON_PLUS_DISPLAY_NAME = "CADS Skeleton Plus"
 
 NUM_SKELETON_CLASSES = 61
-NUM_SKELETON_PLUS_CLASSES = 68
+NUM_SKELETON_PLUS_CLASSES = 91

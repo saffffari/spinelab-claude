@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, replace
 from functools import partial
 from pathlib import Path
@@ -702,6 +702,13 @@ def scene_bounds(models: Iterable[MockVertebra]) -> tuple[float, float, float, f
     )
 
 
+def scene_centroid(models: Sequence[MockVertebra]) -> np.ndarray:
+    if not models:
+        return np.array((0.0, 0.0, 0.0), dtype=float)
+    centers = np.array([m.center for m in models], dtype=float)
+    return centers.mean(axis=0)
+
+
 def model_lookup_by_id(models: Iterable[MockVertebra]) -> dict[str, MockVertebra]:
     return {model.vertebra_id.upper(): model for model in models}
 
@@ -1271,6 +1278,7 @@ class SpineViewport3D(QWidget):
                 continue
             self._selectable_index.setdefault(selection_key, model)
         self._show_demo_scene = bool(self._models)
+        self._pending_camera_reset = self._show_demo_scene
         self._mode = ViewportMode.SOLID
         self._detail_level = DEFAULT_DETAIL_LEVEL
         self._point_size = VIEWPORT_MODES[ViewportMode.POINTS].point_size
@@ -1282,6 +1290,7 @@ class SpineViewport3D(QWidget):
         self._show_reference_axes = True
         self._baseline_pose_visible = True
         self._standing_pose_visible = True
+        self._label_visibility: set[str] | None = None
         self._pose_delta_glyphs: tuple[Any, ...] = ()
         self._plotter = None
         self._surface: QFrame | None = None
@@ -1471,6 +1480,15 @@ class SpineViewport3D(QWidget):
         super().showEvent(event)
         self.set_render_widget_visible(True)
         self._raise_overlay_widgets()
+        if self._pending_camera_reset and not self._disposed and self._plotter is not None:
+            self._pending_camera_reset = False
+            try:
+                self._plotter.reset_camera()
+                self._apply_camera_mode(reset_scale=True)
+                self._plotter.reset_camera_clipping_range()
+                self._plotter.render()
+            except Exception:
+                pass
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.set_render_widget_visible(False)
@@ -1690,7 +1708,7 @@ class SpineViewport3D(QWidget):
         reference_model = self._current_reference_model()
         if reference_model is not None:
             return np.asarray(reference_model.center, dtype=float)
-        return np.array((0.0, 0.0, 0.0), dtype=float)
+        return scene_centroid(self._models)
 
     def _current_reference_basis(self) -> np.ndarray:
         return reference_basis_for_model(self._current_reference_model())
@@ -1981,6 +1999,12 @@ class SpineViewport3D(QWidget):
     def current_pose_visibility(self) -> tuple[bool, bool]:
         return self._baseline_pose_visible, self._standing_pose_visible
 
+    def set_label_visibility(self, visible_labels: set[str] | None) -> None:
+        self._label_visibility = (
+            {v.upper() for v in visible_labels} if visible_labels is not None else None
+        )
+        self._apply_scene_state()
+
     def set_track_selection_pivot(self, enabled: bool) -> None:
         self._track_selection_pivot = bool(enabled)
 
@@ -2122,7 +2146,11 @@ class SpineViewport3D(QWidget):
                 baseline_visible=self._baseline_pose_visible,
                 standing_visible=self._standing_pose_visible,
             )
-            visible = pose_visible and (
+            label_visible = (
+                self._label_visibility is None
+                or spec.vertebra_id in self._label_visibility
+            )
+            visible = pose_visible and label_visible and (
                 not self._isolate_selection or not self._selected_ids or selected
             )
 
@@ -2498,11 +2526,13 @@ class OrthographicMeshViewport(QWidget):
                 continue
             self._selectable_index.setdefault(selection_key, model)
         self._show_demo_scene = bool(self._models)
+        self._pending_camera_reset = self._show_demo_scene
         self._mode = ViewportMode.SOLID
         self._detail_level = DEFAULT_DETAIL_LEVEL
         self._point_size = VIEWPORT_MODES[ViewportMode.POINTS].point_size
         self._baseline_pose_visible = True
         self._standing_pose_visible = True
+        self._label_visibility: set[str] | None = None
         self._selected_ids: tuple[str, ...] = ()
         self._active_id: str | None = None
         self._reference_id: str | None = None
@@ -2613,6 +2643,15 @@ class OrthographicMeshViewport(QWidget):
         super().showEvent(event)
         self.set_render_widget_visible(True)
         self._raise_overlay_widgets()
+        if self._pending_camera_reset and not self._disposed and self._plotter is not None:
+            self._pending_camera_reset = False
+            try:
+                self._plotter.reset_camera()
+                self._apply_camera_mode(reset_scale=True)
+                self._plotter.reset_camera_clipping_range()
+                self._plotter.render()
+            except Exception:
+                pass
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.set_render_widget_visible(False)
@@ -2823,7 +2862,7 @@ class OrthographicMeshViewport(QWidget):
         reference_model = self._current_reference_model()
         if reference_model is not None:
             return np.asarray(reference_model.center, dtype=float)
-        return np.array((0.0, 0.0, 0.0), dtype=float)
+        return scene_centroid(self._models)
 
     def _current_reference_basis(self) -> np.ndarray:
         return reference_basis_for_model(self._current_reference_model())
@@ -3195,6 +3234,12 @@ class OrthographicMeshViewport(QWidget):
     def current_pose_visibility(self) -> tuple[bool, bool]:
         return self._baseline_pose_visible, self._standing_pose_visible
 
+    def set_label_visibility(self, visible_labels: set[str] | None) -> None:
+        self._label_visibility = (
+            {v.upper() for v in visible_labels} if visible_labels is not None else None
+        )
+        self._apply_scene_state()
+
     def _apply_detail_level(self) -> None:
         if self._disposed or self._plotter is None:
             return
@@ -3230,7 +3275,11 @@ class OrthographicMeshViewport(QWidget):
                 baseline_visible=self._baseline_pose_visible,
                 standing_visible=self._standing_pose_visible,
             )
-            visible = pose_visible and (
+            label_visible = (
+                self._label_visibility is None
+                or spec.vertebra_id in self._label_visibility
+            )
+            visible = pose_visible and label_visible and (
                 not self._isolate_selection or not self._selected_ids or selected
             )
 
