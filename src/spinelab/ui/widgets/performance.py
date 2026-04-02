@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import time
 
 from PySide6.QtCore import QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QIcon, QPainter, QPaintEvent, QPen
@@ -121,6 +122,11 @@ class AnalyzeProgressButton(QPushButton):
     _SPINNER_ARC_SPAN_DEGREES = 104.0
     _SPINNER_PHASE_WARP = 0.12
 
+    _ETA_TICK_MS = 1000
+    _ETA_EMA_ALPHA = 0.3
+    _ETA_MIN_PERCENT = 5.0
+    _ETA_MIN_DELTA_TIME = 0.5
+
     def __init__(self, text: str) -> None:
         super().__init__(text)
         self._base_text = text
@@ -133,6 +139,15 @@ class AnalyzeProgressButton(QPushButton):
         self._spinner_timer = QTimer(self)
         self._spinner_timer.setInterval(self._SPINNER_INTERVAL_MS)
         self._spinner_timer.timeout.connect(self._advance_spinner)
+
+        self._eta_last_time: float = 0.0
+        self._eta_last_percent: float = 0.0
+        self._eta_smoothed_rate: float | None = None
+        self._eta_remaining_seconds: float | None = None
+        self._eta_timer = QTimer(self)
+        self._eta_timer.setInterval(self._ETA_TICK_MS)
+        self._eta_timer.timeout.connect(self._tick_eta)
+
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setFixedHeight(GEOMETRY.analyze_button_height)
@@ -148,6 +163,11 @@ class AnalyzeProgressButton(QPushButton):
         return self._spinner_visible
 
     def display_text(self) -> str:
+        if self._progress_active and self._eta_remaining_seconds is not None:
+            remaining = max(0, int(round(self._eta_remaining_seconds)))
+            minutes = remaining // 60
+            seconds = remaining % 60
+            return f"{minutes}:{seconds:02d}"
         return self._base_text
 
     def set_busy(self, busy: bool, *, tint: str | None = None) -> None:
@@ -194,7 +214,49 @@ class AnalyzeProgressButton(QPushButton):
         self._spinner_active = False
         self._spinner_phase = 0.0
         self._spinner_timer.stop()
+        self._reset_eta()
         self.update()
+
+    def update_progress_eta(self, percent: float) -> None:
+        now = time.monotonic()
+        if percent <= 0:
+            self._reset_eta()
+            return
+        if self._eta_last_percent <= 0:
+            self._eta_last_time = now
+            self._eta_last_percent = percent
+            if not self._eta_timer.isActive():
+                self._eta_timer.start()
+            return
+        delta_time = now - self._eta_last_time
+        delta_percent = percent - self._eta_last_percent
+        if delta_time < self._ETA_MIN_DELTA_TIME or delta_percent <= 0:
+            return
+        instant_rate = delta_percent / delta_time
+        if self._eta_smoothed_rate is None:
+            self._eta_smoothed_rate = instant_rate
+        else:
+            self._eta_smoothed_rate = (
+                self._ETA_EMA_ALPHA * instant_rate
+                + (1.0 - self._ETA_EMA_ALPHA) * self._eta_smoothed_rate
+            )
+        self._eta_last_time = now
+        self._eta_last_percent = percent
+        if percent >= self._ETA_MIN_PERCENT and self._eta_smoothed_rate > 0:
+            self._eta_remaining_seconds = (100.0 - percent) / self._eta_smoothed_rate
+        self.update()
+
+    def _tick_eta(self) -> None:
+        if self._eta_remaining_seconds is not None and self._eta_remaining_seconds > 0:
+            self._eta_remaining_seconds = max(0.0, self._eta_remaining_seconds - 1.0)
+        self.update()
+
+    def _reset_eta(self) -> None:
+        self._eta_timer.stop()
+        self._eta_last_time = 0.0
+        self._eta_last_percent = 0.0
+        self._eta_smoothed_rate = None
+        self._eta_remaining_seconds = None
 
     def set_progress_percent(
         self,

@@ -155,12 +155,10 @@ def format_analysis_progress_status(update: AnalysisProgressUpdate) -> str:
     stage_label = update.stage.value.replace("_", " ").title()
     normalized_status = update.status.strip().lower()
     if normalized_status == "failed":
-        return (
-            f"Analyze failed at {update.stage_index}/{update.total_stages}: {stage_label}"
-        )
+        return f"Analyze failed: {stage_label}"
     if normalized_status == "running":
-        return f"Processing {update.stage_index}/{update.total_stages}: {stage_label}"
-    return f"Completed {update.stage_index}/{update.total_stages}: {stage_label}"
+        return stage_label
+    return stage_label
 
 
 class AnalyzeCaseThread(QThread):
@@ -1739,6 +1737,7 @@ class ImportWorkspace(WorkspacePage):
             active=True,
             spinner_active=True,
         )
+        self._analyze_button.update_progress_eta(update.percent)
         self._notify_analysis_status(
             format_analysis_progress_status(update), True, update.percent,
         )

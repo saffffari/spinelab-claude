@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import time
 from collections.abc import Callable
 from contextlib import contextmanager
 from pathlib import Path
@@ -58,16 +57,6 @@ from spinelab.visualization.viewer_3d import DEFAULT_DETAIL_LEVEL
 
 WORKSPACE_ORDER = ("import", "measurement", "report")
 
-
-def _format_eta(remaining_seconds: float) -> str:
-    if remaining_seconds < 10:
-        return "almost done"
-    if remaining_seconds < 60:
-        return f"~{int(remaining_seconds)}s remaining"
-    minutes = int(remaining_seconds / 60)
-    if minutes == 1:
-        return "~1 min remaining"
-    return f"~{minutes} min remaining"
 
 
 def clamp_rect_to_bounds(rect: QRect, bounds: QRect) -> QRect:
@@ -159,7 +148,6 @@ class MainWindow(QMainWindow):
         self._shared_isolate_selection = False
         self._transient_status_stack: list[str] = []
         self._analysis_status_override: tuple[str, bool] | None = None
-        self._analysis_start_time: float | None = None
         self._publish_render_backend_state()
 
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
@@ -962,42 +950,18 @@ class MainWindow(QMainWindow):
     def _handle_analysis_status_changed(
         self, text: str, active: bool, percent: float = 0.0,
     ) -> None:
+        del percent
         if text:
             self._analysis_status_override = (text, active)
             if self._header_status is not None:
                 self._header_status.set_status(text, active=active)
-                self._header_status.set_progress(percent, active=active)
-                self._sync_header_progress_width()
                 self._refresh_renderer_button()
-                self._update_analysis_eta(percent, active)
             return
         self._analysis_status_override = None
-        self._analysis_start_time = None
         if self._header_status is not None:
             self._header_status.set_progress(0.0, active=False)
             self._header_status.set_eta("")
         self._refresh_runtime_status()
-
-    def _update_analysis_eta(self, percent: float, active: bool) -> None:
-        if self._header_status is None:
-            return
-        if not active or percent <= 0:
-            self._analysis_start_time = None
-            self._header_status.set_eta("")
-            return
-        now = time.monotonic()
-        if self._analysis_start_time is None:
-            self._analysis_start_time = now
-            self._header_status.set_eta("")
-            return
-        if percent < 3.0:
-            self._header_status.set_eta("")
-            return
-        elapsed = now - self._analysis_start_time
-        if elapsed < 1.0:
-            return
-        remaining = (elapsed / (percent / 100.0)) - elapsed
-        self._header_status.set_eta(_format_eta(remaining))
 
     def _prime_workspace_shell_sidebar_widths(self) -> None:
         saved_left_width, saved_right_width = self._settings.load_shell_sidebar_widths()

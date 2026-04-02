@@ -732,8 +732,7 @@ def test_import_workspace_analyze_runs_pipeline_and_notifies(
     assert manifest.pipeline_runs[-1].stage == "ingest"
     assert prewarmed_model_counts == [5]
     assert status_payload[0] == ("Preparing analysis", True)
-    assert ("Processing 1/8: Ingest", True) in status_payload
-    assert ("Completed 1/8: Ingest", True) in status_payload
+    assert ("Ingest", True) in status_payload
     assert ("Preparing review scene", True) in status_payload
     assert status_payload[-1] == ("", False)
     assert "Ingest" in workspace._analysis_status_card.value_label.text()  # pyright: ignore[reportPrivateUsage]
@@ -847,7 +846,7 @@ def test_import_workspace_keeps_failed_progress_visible_until_next_run(
     qtbot.waitUntil(lambda: workspace._analysis_thread is None, timeout=1000)  # pyright: ignore[reportPrivateUsage]
 
     assert critical_messages == ["Unable to complete analysis.\n\ninput staging failed"]
-    assert status_payload[-1] == ("Analyze failed at 1/8: Ingest", True)
+    assert status_payload[-1] == ("Analyze failed: Ingest", True)
     assert workspace._analysis_progress_percent == 12  # pyright: ignore[reportPrivateUsage]
     assert workspace._analyze_button.is_busy() is True  # pyright: ignore[reportPrivateUsage]
     assert workspace._analyze_button.shows_spinner() is True  # pyright: ignore[reportPrivateUsage]
