@@ -27,7 +27,7 @@ DEFAULT_NNUNET_RUNTIME_ROOT = "nnunet_results"
 DEFAULT_NNUNET_RAW_ROOT = "nnunet_raw"
 DEFAULT_NNUNET_PREPROCESSED_ROOT = "nnunet_preprocessed"
 DEFAULT_NNUNET_DRIVER_ID = "nnunetv2"
-DEFAULT_NNUNET_ENVIRONMENT_ID = "nnunet-verse20-win"
+DEFAULT_NNUNET_ENVIRONMENT_ID = "cads-nnunet-win"
 DEFAULT_BUNDLE_MODALITY = "ct"
 DEBUG_SEGMENTATION_BUNDLES_ENV_VAR = "SPINELAB_ENABLE_DEBUG_SEGMENTATION_BUNDLES"
 BUNDLE_MANIFEST_NAME = "bundle.json"
@@ -625,7 +625,7 @@ class SegmentationBundleRegistry:
         raise RuntimeError(
             "No active production segmentation bundle is configured. "
             "Install and activate an nnU-Net bundle with "
-            "tools/manage_segmentation_backends.py or tools/install_segmentation_bundle.py."
+            "tools/install_cads_bundles.py --zips-dir <path> --activate skeleton."
         )
 
     def production_status(self) -> tuple[str, str]:

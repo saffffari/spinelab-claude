@@ -498,7 +498,7 @@ def _run_scaffold_segmentation(
         vertebrae_payload=vertebrae_payload,
         model_name=SEGMENTATION_MODEL_NAME,
         model_version=SEGMENTATION_MODEL_VERSION,
-        checkpoint_id="pending-verse20-training",
+        checkpoint_id="cads-pretrained",
         segmentation_profile=SegmentationProfile.SCAFFOLD.value,
         qc_summary={
             "status": "scaffold",

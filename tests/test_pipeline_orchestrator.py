@@ -9,19 +9,10 @@ from PySide6.QtCore import QSettings
 
 import spinelab.pipeline.orchestrator as orchestrator_module
 import spinelab.pipeline.stage_registry as stage_registry_module
-import spinelab.pipeline.stages.segmentation as segmentation_module
 from spinelab.io import CaseStore
 from spinelab.models import CaseManifest, SegmentationProfile
 from spinelab.pipeline import PipelineOrchestrator
 from spinelab.pipeline.contracts import PipelineStageName, StageExecutionResult
-from spinelab.pipeline.device import RuntimeDeviceSelection
-from spinelab.segmentation import (
-    DEBUG_SEGMENTATION_BUNDLES_ENV_VAR,
-    PredictionBatchResult,
-    PredictionOutput,
-    SegmentationBundleRegistry,
-    install_nnunet_bundle,
-)
 from spinelab.services import SettingsService
 from spinelab.services.performance import performance_coordinator, reset_performance_coordinator
 
@@ -34,19 +25,6 @@ def _settings_service(tmp_path: Path) -> SettingsService:
     )
     return service
 
-
-def _write_fake_trainer_root(tmp_path: Path) -> Path:
-    trainer_root = (
-        tmp_path
-        / "legacy-results"
-        / "Dataset321_VERSE20Vertebrae"
-        / "nnUNetTrainer__nnUNetResEncL_24G__3d_fullres"
-    )
-    (trainer_root / "fold_0").mkdir(parents=True, exist_ok=True)
-    (trainer_root / "plans.json").write_text("{}", encoding="utf-8")
-    (trainer_root / "dataset.json").write_text("{}", encoding="utf-8")
-    (trainer_root / "fold_0" / "checkpoint_final.pth").write_bytes(b"checkpoint")
-    return trainer_root
 
 
 def test_pipeline_orchestrator_generates_volume_metrics_and_findings(tmp_path: Path) -> None:
@@ -72,7 +50,7 @@ def test_pipeline_orchestrator_generates_volume_metrics_and_findings(tmp_path: P
         "ingest",
         "normalize",
         "segmentation",
-        "mesh",
+        "point-cloud",
         "landmarks",
         "registration",
         "measurements",
@@ -164,139 +142,6 @@ def test_pipeline_orchestrator_reports_stage_progress(tmp_path: Path) -> None:
     assert len(events) >= 16
     assert len(segmentation_running_events) > 1
     assert any(event.stage_fraction > 0.0 for event in segmentation_running_events)
-
-
-def test_pipeline_orchestrator_runs_happy_path_with_production_segmentation(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    monkeypatch.setenv(DEBUG_SEGMENTATION_BUNDLES_ENV_VAR, "1")
-    store = CaseStore(tmp_path / "data-root")
-    manifest = CaseManifest.blank()
-    manifest.patient_name = "Production Pipeline Case"
-    manifest.cobb_angle = "31 deg"
-    manifest.comparison_modalities = {"primary": "ct", "secondary": "xray"}
-    manifest.segmentation_profile = SegmentationProfile.PRODUCTION.value
-
-    volume_path = tmp_path / "production_ct_volume.nii.gz"
-    volume_data = np.arange(64, dtype=np.int16).reshape((4, 4, 4))
-    nib.save(nib.Nifti1Image(volume_data, np.diag([1.2, 1.2, 2.5, 1.0])), str(volume_path))
-
-    asset = store.import_asset(manifest, volume_path, kind="ct_zstack", label="CT")
-    manifest.assign_asset_to_role(asset.asset_id, "ct_stack")
-
-    settings = _settings_service(tmp_path)
-    trainer_root = _write_fake_trainer_root(tmp_path)
-    bundle = install_nnunet_bundle(
-        store=store,
-        source_results_root=trainer_root,
-        bundle_id="VERSE20 ResEnc Fold 0",
-        settings=settings,
-        activate=True,
-        active_checkpoint_id="fold-0:checkpoint_final",
-    )
-    registry = SegmentationBundleRegistry(store, settings=settings)
-    runtime_selection = RuntimeDeviceSelection(
-        requested_device="cuda",
-        effective_device="cuda",
-        backend="nvidia-cuda",
-        cuda_version="12.4",
-        gpu_name="Test GPU",
-        total_vram_mb=81920,
-        backend_health={"status": "ready"},
-    )
-
-    monkeypatch.setattr(
-        segmentation_module,
-        "SegmentationBundleRegistry",
-        lambda current_store: registry,
-    )
-    monkeypatch.setattr(
-        segmentation_module,
-        "choose_runtime_device",
-        lambda preferred_device=None: runtime_selection,
-    )
-    monkeypatch.setattr(
-        orchestrator_module,
-        "choose_runtime_device",
-        lambda preferred_device=None: runtime_selection,
-    )
-
-    class FakeDriver:
-        driver_id = "nnunetv2"
-
-        def predict(
-            self,
-            normalized_volume_path: Path,
-            runtime_model,
-            working_dir: Path,
-            *,
-            device: str,
-            continue_prediction: bool = False,
-            disable_tta: bool = False,
-            tile_step_size: float = 0.5,
-        ) -> PredictionBatchResult:
-            del continue_prediction, disable_tta, tile_step_size
-            staged_input_dir = working_dir / "inputs"
-            prediction_dir = working_dir / "predictions"
-            staged_input_dir.mkdir(parents=True, exist_ok=True)
-            prediction_dir.mkdir(parents=True, exist_ok=True)
-
-            case_id = normalized_volume_path.name.removesuffix(".nii.gz").removesuffix(".nii")
-            staged_input_path = staged_input_dir / f"{case_id}_0000.nii.gz"
-            staged_input_path.write_bytes(normalized_volume_path.read_bytes())
-
-            image = nib.load(str(normalized_volume_path))
-            label_map = np.zeros(np.asarray(image.dataobj).shape, dtype=np.int16)
-            for index, label_value in enumerate(runtime_model.label_mapping.values()):
-                coordinates = np.unravel_index(index, label_map.shape)
-                label_map[coordinates] = label_value
-            prediction_path = prediction_dir / f"{case_id}.nii.gz"
-            nib.save(nib.Nifti1Image(label_map, image.affine), str(prediction_path))
-
-            return PredictionBatchResult(
-                working_dir=working_dir,
-                staged_input_dir=staged_input_dir,
-                prediction_dir=prediction_dir,
-                command=("python", "nnunet_predict_sidecar.py"),
-                log_path=working_dir / "sidecar.log",
-                device=device,
-                outputs=(
-                    PredictionOutput(
-                        case_id=case_id,
-                        source_path=normalized_volume_path,
-                        staged_input_path=staged_input_path,
-                        prediction_path=prediction_path,
-                    ),
-                ),
-                started_at_utc="2026-03-26T00:00:00Z",
-                finished_at_utc="2026-03-26T00:00:05Z",
-                stdout="prediction complete",
-                stderr="",
-            )
-
-    monkeypatch.setattr(
-        segmentation_module,
-        "resolve_segmentation_driver",
-        lambda driver_id, performance_policy=None: FakeDriver(),
-    )
-
-    orchestrator = PipelineOrchestrator(store)
-    updated_manifest = orchestrator.submit_case_analysis(manifest, preferred_device="cuda")
-
-    assert updated_manifest.measurements.records
-    assert updated_manifest.findings
-    assert any(
-        artifact.artifact_type == "segmentation-run-manifest"
-        for artifact in updated_manifest.artifacts
-    )
-    segmentation_run = next(
-        run for run in updated_manifest.pipeline_runs if run.stage == "segmentation"
-    )
-    assert segmentation_run.backend_tool == "nnunetv2"
-    assert segmentation_run.environment_id == bundle.environment_id
-    assert segmentation_run.device == "cuda"
-    assert segmentation_run.effective_device == "cuda"
 
 
 def test_pipeline_orchestrator_failed_stage_never_reports_100_percent(

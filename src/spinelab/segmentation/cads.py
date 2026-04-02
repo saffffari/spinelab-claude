@@ -34,7 +34,7 @@ CADS_FOLD = "all"
 CADS_CHECKPOINT_NAME = "checkpoint_final.pth"
 CADS_FAMILY = "cads-composite"
 CADS_DRIVER_ID = "cads-composite"
-CADS_ENVIRONMENT_ID = "nnunet-verse20-win"
+CADS_ENVIRONMENT_ID = "cads-nnunet-win"
 
 # ---------------------------------------------------------------------------
 # Unified label map — output label assignments

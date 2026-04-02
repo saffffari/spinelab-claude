@@ -10,12 +10,12 @@ from PySide6.QtWidgets import QWidget
 from spinelab.ui.theme import GEOMETRY, THEME_COLORS, qcolor_from_css, qcolor_with_alpha
 
 GNOMON_VIEWPORT = (0.02, 0.02, 0.18, 0.18)
-GNOMON_LINE_WIDTH = 2
+GNOMON_LINE_WIDTH = 1
 GNOMON_MARGIN = GEOMETRY.overlay_padding
-GNOMON_BUBBLE_DIAMETER = 18.0
+GNOMON_BUBBLE_DIAMETER = 9.0
 GNOMON_OVERLAY_SIZE = max(
-    GEOMETRY.control_height_sm * 2 + GEOMETRY.unit * 4,
-    GEOMETRY.unit * 10,
+    GEOMETRY.control_height_sm + GEOMETRY.unit * 2,
+    GEOMETRY.unit * 5,
 )
 
 

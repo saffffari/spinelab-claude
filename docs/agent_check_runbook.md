@@ -255,16 +255,10 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 - Cadence: scheduled only, after segmentation-sidecar changes, or before release candidates that touch production segmentation
 - Prerequisites:
   - a CUDA-capable GPU is available
-  - the `spinelab-nnunet-verse20-win` environment is installed
-  - the checkpoint exists at the configured results root
+  - the `spinelab-nnunet` environment is installed
+  - CADS pretrained model checkpoints are installed under `E:\data\spinelab\raw_test_data\models\segmentation\`
   - raw test data exists under `E:\data\spinelab\raw_test_data`
-- Command:
-
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 -Action raw-test-data
-  ```
-
-  A narrower explicit-input invocation is also acceptable through [tools/run_verse20_inference.py](/D:/claude/spinelab/tools/run_verse20_inference.py) when the agent needs a single-scan smoke.
+- Command: run Analyze on a test case through the GUI or use `tools/prepare_cads_nnunet.py` for standalone inference.
 
 - Pass criteria:
   - the wrapper launches the dedicated Windows nnU-Net environment
@@ -285,12 +279,12 @@ Agents should treat any new Tier 1 failure as a `regression` unless the failure 
 
 ## Production Segmentation Bundle Prerequisite
 
-The current production segmentation path requires an active installed bundle. The repository exposes the bundle registry and installation logic in code under [src/spinelab/segmentation/bundles.py](/D:/claude/spinelab/src/spinelab/segmentation/bundles.py), including `SegmentationBundleRegistry` and `install_nnunet_bundle()`. It also ships a checked-in helper at [tools/install_segmentation_bundle.py](/D:/claude/spinelab/tools/install_segmentation_bundle.py) for importing and activating a local nnU-Net results tree.
+The current production segmentation path requires an active installed bundle. The repository exposes the bundle registry and installation logic in code under [src/spinelab/segmentation/bundles.py](/D:/claude/spinelab/src/spinelab/segmentation/bundles.py), including `SegmentationBundleRegistry`. It also ships a checked-in helper at [tools/install_cads_bundles.py](/D:/claude/spinelab/tools/install_cads_bundles.py) for importing CADS pretrained model zips and activating a composite bundle.
 
 If the workstation intends to run Check 3 and no production bundle is active, resolve that prerequisite out of band before rerunning the smoke path. The helper entrypoint is:
 
 ```powershell
-conda run -n spinelab-claude python .\tools\install_segmentation_bundle.py --bundle-id <bundle-id> --activate
+conda run -n spinelab-claude python .\tools\install_cads_bundles.py --zips-dir <path-to-model-zips> --activate skeleton
 ```
 
 If a check requires a production bundle and none is configured, classify the check as `blocked` and report that the prerequisite gap is operational, not a newly discovered product failure.

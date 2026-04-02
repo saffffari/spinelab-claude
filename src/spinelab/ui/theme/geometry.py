@@ -28,7 +28,7 @@ class GeometryTokens:
     turbo_slider_height: int = 56
     turbo_button_width: int = 80
     toolbar_control_size: int = 24
-    major_button_height: int = 44
+    major_button_height: int = 44  # Canonical sidebar button height (= control_height_lg)
     radius_window: int = 12
     radius_panel: int = 12
     radius_inner: int = 8
@@ -38,7 +38,7 @@ class GeometryTokens:
     inspector_preview_width: int = 268
     inspector_preview_height: int = 264
     asset_thumbnail_size: int = 56
-    analyze_button_height: int = 88
+    analyze_button_height: int = 44  # Unified with major_button_height
     sidebar_min: int = 248
     inspector_min: int = 288
     viewport_min: int = 320

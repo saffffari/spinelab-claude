@@ -309,8 +309,6 @@ class MainWindow(QMainWindow):
             ensure_demo.triggered.connect(self._ensure_demo_case)
             clear_cases = QAction("Clear Cases", self)
             clear_cases.triggered.connect(self._clear_cases_from_explorer)
-            make_testing_drrs = QAction("Make DRRs for Testing", self)
-            make_testing_drrs.triggered.connect(self._make_testing_drrs_for_current_case)
             open_data_root = QAction("Open Data Root", self)
             open_data_root.triggered.connect(
                 lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(DEFAULT_DATA_ROOT))))
@@ -329,7 +327,6 @@ class MainWindow(QMainWindow):
             menu.addSeparator()
             menu.addAction(ensure_demo)
             menu.addAction(clear_cases)
-            menu.addAction(make_testing_drrs)
             menu.addAction(open_data_root)
             menu.addSeparator()
             menu.addAction(quit_action)

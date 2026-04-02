@@ -433,7 +433,7 @@ Should include:
 
 Rules:
 
-- Export bundles must preserve enough segmentation-backend provenance to distinguish `fold 0`, `fold 1`, `TotalSegmentator`, and `SkellyTour` renders or downstream review packages.
+- Export bundles must preserve enough segmentation-backend provenance to distinguish different backend renders or downstream review packages.
 - Export-bundle naming should include the backend slug when provenance is available so repeated exports from different backends do not overwrite or become ambiguous.
 
 ### `landmarks.json`

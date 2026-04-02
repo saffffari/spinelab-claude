@@ -51,12 +51,7 @@ Repo hygiene:
 - `envs/nanodrr.yml`: DRR sidecar baseline
 - `envs/polypose.yml`: registration sidecar baseline
 - `envs/landmarkpt.yml`: landmark research sidecar baseline
-- `envs/nnunet_verse20.yml`: VERSe20 nnU-Net training baseline
-- `envs/nnunet_verse20_win.yml`: local Windows nnU-Net v2 inference baseline
-- `envs/skellytour.yml`: local Windows SkellyTour comparison baseline
-- `envs/totalsegmentator_win.yml`: local Windows TotalSegmentator comparison baseline
-
-For local Windows inference against a trained VERSe20 fold, use the dedicated wrapper instead of the Lambda training environment file. The checked-in `envs/nnunet_verse20.yml` includes Linux-only tooling such as `tmux` and is intended for Lambda training bootstrap, not local Windows prediction.
+- `envs/cads_nnunet_win.yml`: local Windows CADS composite nnU-Net sidecar
 
 These sidecars target Python `3.10` to `3.12` and keep heavyweight ML dependencies out of the main app environment. Individual backends may pin their own PyTorch and CUDA stacks as needed.
 
@@ -102,76 +97,19 @@ The app works inside a transient workspace under `%LOCALAPPDATA%\SpineLab\sessio
 
 SpineLab intentionally does not provide crash recovery in `v0.1`. If the app terminates unexpectedly, unsaved PHI is not restored; orphaned transient sessions are purged on next startup.
 
-## Local VERSe20 Inference
+## Production Segmentation
 
-Use the Windows wrapper to create the local nnU-Net inference environment:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 -Action setup
-```
-
-That setup path force-installs the official CUDA 12.4 PyTorch wheel on Windows so local inference uses the workstation GPU instead of the CPU-only PyPI build.
-
-By default, the helper expects a locally mounted trained fold at:
-
-```text
-E:\data\spinelab\nnunet\results\Dataset321_VERSE20Vertebrae\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres\fold_0\checkpoint_final.pth
-```
-
-Run inference on every scan under `E:\data\spinelab\raw_test_data`:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 `
-  -Action raw-test-data `
-  -ResultsRoot E:\data\spinelab\nnunet\results `
-  -OutputRoot E:\data\spinelab\raw_test_data\outputs
-```
-
-Run inference on a reproducible random sample of three VERSe `03_test` scans:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\run_verse20_inference.ps1 `
-  -Action verse03-random `
-  -ResultsRoot E:\data\spinelab\nnunet\results `
-  -OutputRoot E:\data\spinelab\raw_test_data\outputs `
-  -SampleSize 3 `
-  -Seed 20260326
-```
-
-The helper stages `_0000` channel-formatted inputs inside the job folder, runs the shared Windows-safe nnU-Net sidecar entrypoint, and writes both the predicted segmentations and a `run_manifest.json` under `E:\data\spinelab\raw_test_data\outputs\...`.
-
-## Production Segmentation Bundles
-
-SpineLab now treats trained segmentation weights as installed production bundles under:
+SpineLab uses CADS pretrained nnU-Net models as the production segmentation backend. Installed bundles live under:
 
 ```text
 E:\data\spinelab\raw_test_data\models\segmentation\<bundle-id>\
 ```
 
-Install a locally synced VERSe20 results tree into the canonical bundle registry and activate it for Analyze:
+Two CADS composite bundles are available:
+- **CADS Skeleton** (`cads-skeleton`): vertebrae, ribs, appendicular bones, sternum, spinal canal (61 classes, 4 models)
+- **CADS Skeleton Plus** (`cads-skeleton-plus`): skeleton + vasculature + spinal cord (68 classes, 7 models)
 
-```powershell
-python .\tools\install_segmentation_bundle.py `
-  --bundle-id verse20-resenc-fold0 `
-  --source-results-root E:\data\spinelab\nnunet\results\Dataset321_VERSE20Vertebrae\nnUNetTrainer__nnUNetResEncL_24G__3d_fullres `
-  --active-checkpoint-id fold-0:checkpoint_final `
-  --activate
-```
-
-The active bundle id is stored in user settings, while each Analyze run records the resolved bundle id, checkpoint id, driver id, environment id, and a per-run segmentation provenance manifest under the case `analytics\derived\segmentation` stage root. When debug activation is not enabled, the VERSe20 nnU-Net bundle ids are quarantined away from the normal operator path and Analyze falls back to the installed production-safe backend priority, preferring `SkellyTour` and then `TotalSegmentator`.
-If the imported trainer tree contains multiple folds, `--active-checkpoint-id` is required so the production checkpoint is chosen explicitly.
-Use the canonical backend manager to list, install, and activate the supported eval backends:
-
-```powershell
-python .\tools\manage_segmentation_backends.py status
-python .\tools\manage_segmentation_backends.py install verse20-resenc-fold0 --activate
-python .\tools\manage_segmentation_backends.py install verse20-resenc-fold1
-python .\tools\manage_segmentation_backends.py install totalsegmentator-baseline
-python .\tools\manage_segmentation_backends.py install skellytour
-python .\tools\manage_segmentation_backends.py activate skellytour
-```
-
-The dev backend dialog uses the same registry and supports the same four backend ids. `SkellyTour` is the current temporary production default, `TotalSegmentator` remains an available comparison backend, and the VERSe20 nnU-Net bundles remain debug-only until the oversized-case recovery path lands. All comparison backends are remapped into the vertebra-only SpineLab contract.
+The active bundle id is stored in user settings, while each Analyze run records the resolved bundle id, checkpoint id, driver id, environment id, and a per-run segmentation provenance manifest under the case `analytics\derived\segmentation` stage root. The CADS composite driver runs each sub-model task sequentially via the nnU-Net sidecar, then merges predictions using label cherry-pick maps.
 
 ## GUI Validation
 
@@ -229,7 +167,6 @@ python .\tools\benchmark_startup.py
 - `docs/ontology/spinelab_vertebral_labeling_ontology.yaml`: canonical imported vertebral labeling ontology and measurement dependency spec; frozen and not editable without explicit user approval
 - `docs/spinelab_manifesto.md`: long-form project manifesto and roadmap
 - `docs/roadmap.md`: GUI-first implementation sequence for the scientific pipeline stages
-- `docs/verse20_lambda_training.md`: step-by-step Lambda + VERSe20 training walkthrough
 - `docs/design_system.md`: locked palette, typography, geometry, and layout rules
 - `docs/code_review.md`: proactive and recursive review checklist
 - `docs/agent_check_runbook.md`: canonical recurring CI, workstation smoke, and optimization check runbook for agents

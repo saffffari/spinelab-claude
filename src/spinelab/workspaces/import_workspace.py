@@ -804,7 +804,7 @@ class ImportWorkspace(WorkspacePage):
 
         self._xray_ap_viewport = ImageViewport2D("AP", XrayProjection.AP)
         self._xray_lat_viewport = ImageViewport2D("Lat", XrayProjection.LAT)
-        self._ct_viewport = ZStackViewport2D("CT", use_external_slice_toolbar=True)
+        self._ct_viewport = ZStackViewport2D("CT", use_external_slice_toolbar=False)
 
         self._preview_label = RoundedImagePreview("InspectorPreviewImage")
         self._viewport_value_label = QLabel("AP")
@@ -953,7 +953,7 @@ class ImportWorkspace(WorkspacePage):
         action_layout.addWidget(self._precision_strip)
 
         self._analyze_button.setObjectName("InspectorAnalyzeButton")
-        self._analyze_button.setFixedHeight(GEOMETRY.analyze_button_height)
+        self._analyze_button.setFixedHeight(GEOMETRY.major_button_height)
         self._analyze_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._analyze_button.setIcon(
             build_svg_icon(
@@ -987,8 +987,6 @@ class ImportWorkspace(WorkspacePage):
         )
         frame_layout.setSpacing(GEOMETRY.viewport_gap)
 
-        frame_layout.addWidget(self._build_center_toolbar())
-
         layout = TransparentSplitter(Qt.Orientation.Horizontal)
         xray_stack = TransparentSplitter(Qt.Orientation.Vertical)
         self._center_splitter = layout
@@ -1010,31 +1008,6 @@ class ImportWorkspace(WorkspacePage):
         schedule_splitter_midpoint(xray_stack)
         schedule_splitter_midpoint(layout)
         frame_layout.addWidget(layout, stretch=1)
-        return frame
-
-    def _build_center_toolbar(self) -> QFrame:
-        frame = QFrame()
-        frame.setObjectName("ImportViewportToolbar")
-        frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        layout = QHBoxLayout(frame)
-        layout.setContentsMargins(
-            GEOMETRY.default_padding,
-            GEOMETRY.inspector_row_gap,
-            GEOMETRY.default_padding,
-            GEOMETRY.inspector_row_gap,
-        )
-        layout.setSpacing(GEOMETRY.inspector_row_gap)
-
-        title_label = QLabel("Z Stack")
-        apply_text_role(title_label, "meta")
-        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignVCenter)
-        layout.addStretch(1)
-        layout.addWidget(
-            self._ct_viewport.slice_toolbar_group(),
-            stretch=1,
-            alignment=Qt.AlignmentFlag.AlignVCenter,
-        )
         return frame
 
     def _build_right_panel(self) -> PanelFrame:
@@ -1393,15 +1366,6 @@ class ImportWorkspace(WorkspacePage):
         self._pose_engine_button.setText(pose_engine_button_text(pose_mode))
         self._pose_engine_button.setProperty("variant", pose_engine_button_variant(pose_mode))
         self._pose_engine_button.setEnabled(can_edit_controls)
-        self._pose_engine_button.setIcon(
-            build_svg_icon(
-                COMPARISON_ICON_PATH,
-                major_button_icon_size(),
-                device_pixel_ratio=self._pose_engine_button.devicePixelRatioF(),
-                tint=pose_engine_button_tint(pose_mode),
-            )
-        )
-        self._pose_engine_button.setIconSize(major_button_icon_size())
         refresh_widget_style(self._pose_engine_button)
 
         for slot, button in self._comparison_buttons.items():
@@ -1413,15 +1377,6 @@ class ImportWorkspace(WorkspacePage):
             button.setText(comparison_button_text(slot, modality))
             button.setProperty("variant", comparison_button_variant(modality))
             button.setEnabled(can_edit_controls and slot in required_slots)
-            button.setIcon(
-                build_svg_icon(
-                    COMPARISON_ICON_PATH,
-                    major_button_icon_size(),
-                    device_pixel_ratio=button.devicePixelRatioF(),
-                    tint=comparison_button_tint(modality),
-                )
-            )
-            button.setIconSize(major_button_icon_size())
             refresh_widget_style(button)
         self._comparison_selector_strip.set_mode(pose_mode)
         self._analyze_button.setEnabled(

@@ -13,12 +13,12 @@ from spinelab.pipeline.contracts import (
 from spinelab.segmentation import DEFAULT_NNUNET_CONDA_ENV_NAME
 
 ENVIRONMENT = EnvironmentSpec(
-    env_id="nnunet-verse20-win",
-    manifest_path=Path("envs") / "nnunet_verse20_win.yml",
+    env_id="cads-nnunet-win",
+    manifest_path=Path("envs") / "cads_nnunet_win.yml",
     python_version="3.10",
     pytorch_version="2.5.1",
     cuda_version="12.4",
-    notes="Local Windows nnU-Net v2 sidecar for production vertebra segmentation.",
+    notes="Local Windows nnU-Net v2 sidecar for CADS composite segmentation.",
 )
 
 

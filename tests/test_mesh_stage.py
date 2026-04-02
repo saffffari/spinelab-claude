@@ -9,8 +9,10 @@ import pytest
 
 from spinelab.io import CaseStore
 from spinelab.models import CaseManifest, SegmentationProfile
-from spinelab.pipeline import PipelineOrchestrator
-from spinelab.pipeline.contracts import PipelineStageName
+from spinelab.pipeline.manifest_bridge import apply_stage_result
+from spinelab.pipeline.stages.mesh import run_mesh_stage
+from spinelab.pipeline.stages.normalize import run_normalize_stage
+from spinelab.pipeline.stages.segmentation import run_segmentation_stage
 from spinelab.pipeline.stages.mesh_pipeline import (
     DEFAULT_EXTRACTION_ALGORITHM,
     SURFACE_NETS_ALGORITHM,
@@ -36,16 +38,14 @@ def test_mesh_stage_persists_production_mesh_contracts(tmp_path: Path) -> None:
     asset = store.import_asset(manifest, volume_path, kind="ct_zstack", label="CT")
     manifest.assign_asset_to_role(asset.asset_id, "ct_stack")
 
-    orchestrator = PipelineOrchestrator(store)
-    updated_manifest = orchestrator.submit_case_analysis(
-        manifest,
-        preferred_device="cpu",
-        requested_stages=(PipelineStageName.MESH,),
-    )
+    for stage_runner in (run_normalize_stage, run_segmentation_stage, run_mesh_stage):
+        result = stage_runner(store, manifest)
+        apply_stage_result(manifest, result)
+        store.save_manifest(manifest)
 
     mesh_artifact = next(
         artifact
-        for artifact in updated_manifest.artifacts
+        for artifact in manifest.artifacts
         if artifact.artifact_type == "mesh-manifest"
     )
     payload = json.loads(Path(mesh_artifact.path).read_text(encoding="utf-8"))

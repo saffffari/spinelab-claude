@@ -12,7 +12,7 @@ from spinelab.models import CaseManifest, PipelineArtifact, VolumeMetadata
 from spinelab.ontology import STANDARD_STRUCTURES, standard_level_sort_key
 
 SEGMENTATION_MODEL_NAME = "nnunetv2-resenc-l"
-SEGMENTATION_MODEL_VERSION = "verse20-foundation-plan"
+SEGMENTATION_MODEL_VERSION = "cads-foundation"
 PTV3_MODEL_NAME = "point-transformer-v3"
 PTV3_MODEL_VERSION = "vertex-groups-foundation-plan"
 REGISTRATION_MODEL_NAME = "polypose"

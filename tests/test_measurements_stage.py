@@ -14,7 +14,7 @@ from spinelab.pipeline.stage_registry import expand_requested_stages
 from spinelab.pipeline.stages.findings import run_findings_stage
 from spinelab.pipeline.stages.landmarks import run_landmarks_stage
 from spinelab.pipeline.stages.measurements import run_measurements_stage
-from spinelab.pipeline.stages.mesh import run_mesh_stage
+from spinelab.pipeline.stages.point_cloud import run_point_cloud_stage
 from spinelab.pipeline.stages.normalize import run_normalize_stage
 from spinelab.pipeline.stages.segmentation import run_segmentation_stage
 from spinelab.segmentation_profiles import SegmentationProfile
@@ -38,7 +38,7 @@ def _prepare_landmarks_case(tmp_path: Path) -> tuple[CaseStore, CaseManifest]:
     for stage_runner in (
         run_normalize_stage,
         run_segmentation_stage,
-        run_mesh_stage,
+        run_point_cloud_stage,
         run_landmarks_stage,
     ):
         result = stage_runner(store, manifest)

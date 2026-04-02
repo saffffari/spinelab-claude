@@ -12,6 +12,6 @@ def test_capsule_radius_is_half_height() -> None:
 
 
 def test_geometry_nested_radius_steps_down_from_inner_radius() -> None:
-    assert GEOMETRY.radius_panel == 20
-    assert GEOMETRY.radius_inner == 12
+    assert GEOMETRY.radius_panel == 12
+    assert GEOMETRY.radius_inner == 8
     assert GEOMETRY.radius_nested == 10

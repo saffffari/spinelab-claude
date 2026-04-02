@@ -47,8 +47,8 @@ STAGE_SPECS: dict[PipelineStageName, PipelineStageSpec] = {
         runner=run_segmentation_stage,
         dependencies=(PipelineStageName.NORMALIZE,),
         review_surface="import",
-        backend_tool="nnunetv2",
-        environment_id="nnunet-verse20-win",
+        backend_tool="cads-composite",
+        environment_id="cads-nnunet-win",
         produced_artifact_types=(
             "segmentation",
             "segmentation-label-map",

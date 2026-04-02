@@ -18,12 +18,12 @@ class TurboModeButton(CapsuleButton):
     _ARM_TIMEOUT_MS = 2000
 
     def __init__(self, mode: PerformanceMode | str = PerformanceMode.ADAPTIVE) -> None:
-        super().__init__("", major=False)
+        super().__init__("", major=True)
         self.setObjectName("TurboModeButton")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.setFixedWidth(GEOMETRY.turbo_button_width)
-        self.setFixedHeight(GEOMETRY.analyze_button_height)
+        self.setFixedHeight(GEOMETRY.major_button_height)
         self._mode = canonical_performance_mode(mode)
         self._state = ""
         self._arm_timer = QTimer(self)
@@ -152,7 +152,7 @@ class AnalyzeProgressButton(QPushButton):
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.setFixedHeight(GEOMETRY.analyze_button_height)
+        self.setFixedHeight(GEOMETRY.major_button_height)
         apply_text_role(self, "major-button")
 
     def is_busy(self) -> bool:

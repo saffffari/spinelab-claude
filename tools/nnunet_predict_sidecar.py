@@ -381,7 +381,11 @@ def _predict_without_export_pool(
             _emit_case_diagnostics(diagnostics)
             prediction = predictor.predict_logits_from_preprocessed_data(data).cpu()
 
-            print("resampling and exporting prediction in-process")
+            ofile_parent = Path(ofile).parent
+            print(f"resampling and exporting prediction in-process")
+            print(f"output target: {ofile}{args.output_dir.suffix or '.nii.gz'}")
+            print(f"output dir exists: {ofile_parent.exists()}")
+            ofile_parent.mkdir(parents=True, exist_ok=True)
             export_prediction_from_logits(
                 prediction,
                 properties,

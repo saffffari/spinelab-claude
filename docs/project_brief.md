@@ -32,8 +32,7 @@ The first product is not an end-to-end black box. It is a modular, auditable pip
 
 ## Current Default Technical Decisions
 
-- Segmentation default: temporary `SkellyTour` high-label CT baseline while the current VERSe20 ResEnc nnU-Net path is quarantined behind explicit debug activation
-- Segmentation comparison backends: VERSe20 `fold 0`, VERSe20 `fold 1`, and `TotalSegmentator` remain available for dev or research evaluation rather than the normal operator path
+- Segmentation default: CADS pretrained composite nnU-Net models (Skeleton: 61 classes / 4 tasks, Skeleton Plus: 68 classes / 7 tasks)
 - Landmark and shape modeling: dense point segmentation plus correspondence, not generic classification
 - Registration default: PolyPose-style vertebra-level polyrigid registration
 - Measurement strategy: keep projected radiograph-equivalent metrics separate from native 3D metrics
@@ -97,7 +96,7 @@ What exists now:
 - hardware OpenGL probing and software-render blocking for interactive 3D
 - stabilized measurement viewport controls, pose toggles, and workspace isolation
 - `.spine` as the sole normal saved-case format with no crash recovery for unsaved PHI
-- a dev and research segmentation-backend manager that can activate installed VERSe20 `fold 0`, VERSe20 `fold 1`, `TotalSegmentator`, or `SkellyTour` comparison bundles without adding any per-case selector to the operator workflow, with the VERSe20 nnU-Net bundles currently quarantined behind explicit debug activation
+- a segmentation-backend manager that can activate installed CADS composite bundles without adding any per-case selector to the operator workflow
 - backend provenance now carried from segmentation into mesh, export, and review-facing measurement or report surfaces so qualitative fold-comparison renders remain attributable
 - the first real single-pose native-3D measurement slice derived from landmark primitives, with disc height, listhesis, segmental lordosis or kyphosis, lumbar lordosis, and thoracic kyphosis available even when paired standing data are absent
 
@@ -110,9 +109,8 @@ What is still placeholder or scaffolded:
 
 ## Immediate Next Implementation Priorities
 
-1. Keep the operator workflow on the bundle-driven fail-closed production path with `SkellyTour` as the current temporary production default, and handle backend changes through installation and activation rather than per-case selection. Reserve `Scaffold` for debug-only flows.
-2. Recover the VERSe20 ResEnc nnU-Net path behind explicit debug activation by adding oversized-case preflight gating and a later ROI-first fallback before it is reconsidered for the normal operator workflow.
-3. Tune and benchmark the mesh stage against real nnU-Net, `TotalSegmentator`, and `SkellyTour` outputs from the installed comparison backends.
+1. Keep the operator workflow on the bundle-driven fail-closed production path with CADS as the production default, and handle backend changes through installation and activation rather than per-case selection. Reserve `Scaffold` for debug-only flows.
+2. Tune and benchmark the mesh stage against real CADS composite outputs from the installed production bundles.
 4. Extend the single-pose native-3D measurement slice while keeping unsupported radiograph-equivalent or full-field-of-view metrics explicitly invalid.
 5. Replace scaffold PTv3 vertex-group and landmark outputs with real dense vertebra-local inference.
 6. Replace scaffold registration with PolyPose-style target-pose recovery from calibrated multi-view input.

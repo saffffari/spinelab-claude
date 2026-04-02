@@ -97,8 +97,8 @@ def test_export_measurement_bundle_writes_structured_data_root_output(
         ],
         artifact_paths={"measurements": measurements_artifact},
         backend_provenance={
-            "backend_id": "verse20-resenc-fold1",
-            "display_name": "VERSe20 ResEnc Fold 1",
+            "backend_id": "cads-skeleton",
+            "display_name": "CADS Skeleton",
             "checkpoint_id": "fold-1:checkpoint_final",
         },
     )
@@ -118,4 +118,4 @@ def test_export_measurement_bundle_writes_structured_data_root_output(
     assert bundle_manifest["standing_drrs"]["lat"]["generation_mode"] == "mesh_projection_scaffold"
     assert bundle_manifest["baseline_mesh_count"] == 1
     assert bundle_manifest["standing_scene_count"] == 1
-    assert bundle_manifest["segmentation_backend"]["backend_id"] == "verse20-resenc-fold1"
+    assert bundle_manifest["segmentation_backend"]["backend_id"] == "cads-skeleton"

@@ -1,0 +1,8 @@
+# Baseline Windows conda environment for the CADS composite nnU-Net sidecar.
+name: spinelab-nnunet
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - git

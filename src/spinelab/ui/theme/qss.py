@@ -144,7 +144,7 @@ QLabel#ImageViewportLabel {{
 }}
 
 QFrame#HeaderBar {{
-    background: {THEME_COLORS.shell_elevated};
+    background: {THEME_COLORS.panel_bg};
     border: 0;
 }}
 
@@ -316,6 +316,7 @@ QToolButton#HeaderMenuButton::menu-indicator {{
 
 QPushButton[majorButton="true"] {{
     min-height: {GEOMETRY.major_button_height}px;
+    border-radius: {capsule_radius(GEOMETRY.major_button_height)}px;
     background: transparent;
     border: 1px solid {THEME_COLORS.border_soft};
     color: {THEME_COLORS.text_primary};
@@ -605,7 +606,7 @@ QFrame#InspectorPreviewImage {{
 }}
 
 QFrame#InspectorPreviewFrame {{
-    background: {THEME_COLORS.viewport_empty_bg};
+    background: transparent;
     border: 0;
     border-radius: {inner_radius}px;
 }}
@@ -635,7 +636,7 @@ QFrame#InspectorActionCard {{
 }}
 
 QFrame#InspectorSummaryCard {{
-    background: {THEME_COLORS.viewport_overlay};
+    background: transparent;
     border: 0;
     border-radius: {inner_radius}px;
 }}

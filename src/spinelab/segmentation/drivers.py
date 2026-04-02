@@ -26,9 +26,9 @@ DriverProgressCallback = Callable[[float, str], None]
 
 DRIVER_ID_NNUNETV2 = "nnunetv2"
 DRIVER_ID_CADS_COMPOSITE = "cads-composite"
-DEFAULT_NNUNET_CONDA_ENV_NAME = "spinelab-nnunet-verse20-win"
+DEFAULT_NNUNET_CONDA_ENV_NAME = "spinelab-nnunet"
 _ENVIRONMENT_ID_TO_CONDA_ENV = {
-    "nnunet-verse20-win": DEFAULT_NNUNET_CONDA_ENV_NAME,
+    "cads-nnunet-win": DEFAULT_NNUNET_CONDA_ENV_NAME,
 }
 
 

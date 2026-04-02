@@ -50,6 +50,8 @@ def test_collapsed_right_sidebar_is_hidden_from_splitter(qtbot, tmp_path: Path) 
     workspace = build_workspace(tmp_path)
     qtbot.addWidget(workspace)
 
+    # Right sidebar defaults to hidden; one toggle opens it, second toggle hides it.
+    workspace._toggle_right()
     workspace._toggle_right()
 
     assert workspace._right_panel.isHidden() is True  # pyright: ignore[reportPrivateUsage]
@@ -60,7 +62,7 @@ def test_restored_right_sidebar_becomes_visible_again(qtbot, tmp_path: Path) -> 
     workspace = build_workspace(tmp_path)
     qtbot.addWidget(workspace)
 
-    workspace._toggle_right()
+    # Right sidebar defaults to hidden; one toggle opens it.
     workspace._toggle_right()
 
     assert workspace._right_panel.isHidden() is False  # pyright: ignore[reportPrivateUsage]

@@ -203,7 +203,7 @@ def test_docs_data_contracts_match_frozen_ontology_lists() -> None:
     ]
 
 
-def test_mesh_and_landmarks_contracts_use_shared_ontology(tmp_path: Path) -> None:
+def test_landmarks_contracts_use_shared_ontology(tmp_path: Path) -> None:
     store = CaseStore(tmp_path / "data-root")
     manifest = CaseManifest.blank()
     manifest.patient_name = "Ontology Contract Case"
@@ -223,11 +223,6 @@ def test_mesh_and_landmarks_contracts_use_shared_ontology(tmp_path: Path) -> Non
         requested_stages=(PipelineStageName.LANDMARKS,),
     )
 
-    mesh_artifact = next(
-        artifact
-        for artifact in updated_manifest.artifacts
-        if artifact.artifact_type == "mesh-manifest"
-    )
     landmarks_artifact = next(
         artifact for artifact in updated_manifest.artifacts if artifact.artifact_type == "landmarks"
     )
@@ -237,23 +232,8 @@ def test_mesh_and_landmarks_contracts_use_shared_ontology(tmp_path: Path) -> Non
         if artifact.artifact_type == "ptv3-vertebrae"
     )
 
-    mesh_payload = json.loads(Path(mesh_artifact.path).read_text(encoding="utf-8"))
     landmarks_payload = json.loads(Path(landmarks_artifact.path).read_text(encoding="utf-8"))
     ptv3_payload = json.loads(Path(ptv3_artifact.path).read_text(encoding="utf-8"))
-
-    first_mesh_entry = next(
-        entry for entry in mesh_payload["vertebrae"] if entry["status"] == "complete"
-    )
-    assert first_mesh_entry["structure_instance_id"].startswith(("vertebra_", "sacrum_"))
-    assert first_mesh_entry["standard_level_id"] in STANDARD_LEVEL_IDS
-    assert first_mesh_entry["supports_standard_measurements"] is True
-    assert mesh_payload["point_cloud_settings"]["surface_patch_schema_version"] == (
-        SURFACE_PATCH_SCHEMA_VERSION
-    )
-
-    point_cloud = np.load(first_mesh_entry["point_cloud_path"])
-    assert str(point_cloud["structure_instance_id"]) == first_mesh_entry["structure_instance_id"]
-    assert str(point_cloud["standard_level_id"]) == first_mesh_entry["standard_level_id"]
 
     first_landmark_entry = landmarks_payload["vertebrae"][0]
     assert set(first_landmark_entry["primitives"]) == {

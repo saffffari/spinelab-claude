@@ -28,8 +28,8 @@ def test_active_segmentation_bundle_id_round_trips(tmp_path: Path) -> None:
 
     assert service.load_active_segmentation_bundle_id() is None
 
-    service.save_active_segmentation_bundle_id("verse20-resenc-fold0")
-    assert service.load_active_segmentation_bundle_id() == "verse20-resenc-fold0"
+    service.save_active_segmentation_bundle_id("cads-skeleton")
+    assert service.load_active_segmentation_bundle_id() == "cads-skeleton"
 
     service.clear_active_segmentation_bundle_id()
     assert service.load_active_segmentation_bundle_id() is None

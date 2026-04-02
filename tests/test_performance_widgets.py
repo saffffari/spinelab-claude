@@ -13,7 +13,7 @@ def test_turbo_mode_button_first_click_only_arms(qtbot) -> None:
     button.mode_changed.connect(emitted.append)
 
     assert button.state() == "idle"
-    assert button.text() == "Arm Turbo"
+    assert button.text() == "Turbo"
 
     qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
 
@@ -84,7 +84,7 @@ def test_turbo_mode_button_external_mode_sync_cancels_armed_state(qtbot) -> None
 def test_analyze_progress_button_keeps_analyze_label_while_running() -> None:
     button = AnalyzeProgressButton("Analyze")
 
-    assert button.height() == GEOMETRY.analyze_button_height
+    assert button.height() == GEOMETRY.major_button_height
 
     button.set_progress_percent(42, active=True)
 

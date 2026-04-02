@@ -1151,14 +1151,14 @@ def test_export_model_ignores_active_backend_slug_without_manifest_provenance(
         measurement_workspace_module,
         "summary_for_active_bundle",
         lambda store, settings=None: SegmentationBackendSummary(
-            backend_id="verse20-resenc-fold1",
-            display_name="VERSe20 ResEnc Fold 1",
-            family="nnunet-verse20-resenc",
-            driver_id="nnunetv2",
-            runtime_environment_id="nnunet-verse20-win",
-            checkpoint_id="fold-1:checkpoint_final",
-            model_name="nnunet-verse20-resenc",
-            model_version="verse20-resenc-fold1",
+            backend_id="cads-skeleton",
+            display_name="CADS Skeleton",
+            family="cads-composite",
+            driver_id="cads-composite",
+            runtime_environment_id="cads-nnunet-win",
+            checkpoint_id="fold-all:checkpoint_final",
+            model_name="cads-composite",
+            model_version="cads-skeleton",
         ),
     )
     monkeypatch.setattr(

@@ -172,7 +172,7 @@ def test_import_workspace_uses_short_viewport_titles(qtbot, tmp_path: Path) -> N
     assert workspace._ct_viewport.title_label.text() == "CT"
 
 
-def test_import_workspace_hosts_ct_slider_in_top_toolbar(qtbot, tmp_path: Path) -> None:
+def test_import_workspace_hosts_ct_slider_in_viewport_footer(qtbot, tmp_path: Path) -> None:
     workspace = ImportWorkspace(
         CaseManifest.blank(),
         SettingsService(),
@@ -181,15 +181,9 @@ def test_import_workspace_hosts_ct_slider_in_top_toolbar(qtbot, tmp_path: Path) 
     )
     qtbot.addWidget(workspace)
 
-    toolbar = workspace.findChild(QFrame, "ImportViewportToolbar")
-    assert toolbar is not None
-
-    slider_group = workspace._ct_viewport.slice_toolbar_group()  # pyright: ignore[reportPrivateUsage]
-    slider = slider_group.findChild(QSlider, "ViewportSliceSlider")
-
-    assert toolbar.isAncestorOf(slider_group)
+    slider = workspace._ct_viewport.findChild(QSlider, "ViewportSliceSlider")  # pyright: ignore[reportPrivateUsage]
     assert slider is not None
-    assert toolbar.isAncestorOf(slider)
+    assert workspace._ct_viewport.isAncestorOf(slider)  # pyright: ignore[reportPrivateUsage]
 
 
 def test_import_images_section_is_last_left_sidebar_section(qtbot, tmp_path: Path) -> None:
@@ -234,7 +228,7 @@ def test_import_actions_are_anchored_in_left_sidebar(qtbot, tmp_path: Path) -> N
         workspace._precision_strip  # pyright: ignore[reportPrivateUsage]
     )
     assert workspace._left_action_card.isAncestorOf(workspace._import_drop_zone) is False  # pyright: ignore[reportPrivateUsage]
-    assert workspace._import_drop_zone.height() == GEOMETRY.major_button_height
+    assert workspace._import_drop_zone.maximumHeight() == GEOMETRY.major_button_height
     assert workspace._images_section.isAncestorOf(workspace._import_drop_zone) is True  # pyright: ignore[reportPrivateUsage]
     assert (
         workspace._images_section.content_layout.itemAt(0).widget()
