@@ -26,6 +26,7 @@ class GeometryTokens:
     control_height_md: int = 36
     control_height_lg: int = 44
     turbo_slider_height: int = 56
+    turbo_button_width: int = 80
     toolbar_control_size: int = 24
     major_button_height: int = 44
     radius_window: int = 12

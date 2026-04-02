@@ -951,8 +951,6 @@ class ImportWorkspace(WorkspacePage):
             self._precision_buttons[tier] = btn
         action_layout.addWidget(self._precision_strip)
 
-        action_layout.addWidget(self._turbo_mode_button)
-
         self._analyze_button.setObjectName("InspectorAnalyzeButton")
         self._analyze_button.setFixedHeight(GEOMETRY.analyze_button_height)
         self._analyze_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -965,7 +963,13 @@ class ImportWorkspace(WorkspacePage):
             )
         )
         self._analyze_button.setIconSize(major_button_icon_size())
-        action_layout.addWidget(self._analyze_button)
+
+        analyze_row = QHBoxLayout()
+        analyze_row.setContentsMargins(0, 0, 0, 0)
+        analyze_row.setSpacing(GEOMETRY.inspector_row_gap)
+        analyze_row.addWidget(self._turbo_mode_button)
+        analyze_row.addWidget(self._analyze_button, 1)
+        action_layout.addLayout(analyze_row)
 
         panel.outer_layout.addWidget(action_card)
         return panel
