@@ -56,6 +56,10 @@ def point_cloud_data_dir(store: CaseStore, manifest: CaseManifest) -> Path:
     return stage_root(store, manifest, "point-cloud") / "point-clouds"
 
 
+def point_cloud_mesh_dir(store: CaseStore, manifest: CaseManifest) -> Path:
+    return stage_root(store, manifest, "point-cloud") / "meshes"
+
+
 def prepared_scene_path(store: CaseStore, manifest: CaseManifest, pose_name: str) -> Path:
     if pose_name == "standing":
         return stage_file(store, manifest, "registration", "prepared_scene_standing.json")

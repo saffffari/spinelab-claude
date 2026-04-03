@@ -20,7 +20,7 @@ from spinelab.pipeline.stages.mesh_pipeline import (
     vtk_image_from_mask,
 )
 
-POINT_CLOUD_PIPELINE_VERSION = "point-cloud-pipeline.v1"
+POINT_CLOUD_PIPELINE_VERSION = "point-cloud-pipeline.v2"
 SURFACE_NETS_ALGORITHM = "vtk_surface_nets"
 
 
@@ -45,6 +45,7 @@ class ExtractedPointCloudResult:
     center_mm: tuple[float, float, float] | None = None
     extents_mm: tuple[float, float, float] | None = None
     surface_nets_vertex_count: int = 0
+    mesh_polydata: object | None = None
 
 
 def _to_mesh_config(config: PointCloudPipelineConfig) -> MeshPipelineConfig:
@@ -158,6 +159,7 @@ def extract_vertebra_point_cloud(
         center_mm=center,
         extents_mm=extents,
         surface_nets_vertex_count=surface_nets_vertex_count,
+        mesh_polydata=polydata,
     )
 
 
@@ -184,26 +186,32 @@ def farthest_point_sampling(
     return selected
 
 
-def write_point_cloud(
+def write_point_cloud_ply(
     path: Path,
     *,
     points: np.ndarray,
     normals: np.ndarray,
-    vertebra_id: str,
-    structure_instance_id: str,
-    standard_level_id: str | None,
-    display_label: str,
-    coordinate_frame: str,
 ) -> None:
-    """Write point cloud NPZ with pickle-safe string metadata."""
+    """Write point cloud as binary little-endian PLY with vertex normals."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(
-        path,
-        points=np.asarray(points, dtype=np.float32),
-        normals=np.asarray(normals, dtype=np.float32),
-        vertebra_id=np.array(vertebra_id.encode("utf-8")),
-        structure_instance_id=np.array(structure_instance_id.encode("utf-8")),
-        display_label=np.array(display_label.encode("utf-8")),
-        standard_level_id=np.array((standard_level_id or "").encode("utf-8")),
-        coordinate_frame=np.array(coordinate_frame.encode("utf-8")),
+    pts = np.asarray(points, dtype=np.float32)
+    nrm = np.asarray(normals, dtype=np.float32)
+    n_vertices = pts.shape[0]
+    header = (
+        "ply\n"
+        "format binary_little_endian 1.0\n"
+        f"element vertex {n_vertices}\n"
+        "property float x\n"
+        "property float y\n"
+        "property float z\n"
+        "property float nx\n"
+        "property float ny\n"
+        "property float nz\n"
+        "end_header\n"
     )
+    with path.open("wb") as f:
+        f.write(header.encode("ascii"))
+        combined = np.empty((n_vertices, 6), dtype=np.float32)
+        combined[:, :3] = pts
+        combined[:, 3:] = nrm
+        f.write(combined.tobytes())

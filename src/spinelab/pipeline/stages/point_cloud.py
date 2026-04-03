@@ -10,6 +10,7 @@ from spinelab.models.manifest import make_id
 from spinelab.pipeline.artifacts import (
     point_cloud_data_dir,
     point_cloud_manifest_path,
+    point_cloud_mesh_dir,
     prepared_scene_path,
     write_json_artifact,
 )
@@ -24,12 +25,13 @@ from spinelab.pipeline.stages.mesh_pipeline import (
     label_statistics_for_entries,
     load_label_map,
     parse_segmentation_entries,
+    write_polydata,
 )
 from spinelab.pipeline.stages.point_cloud_pipeline import (
     POINT_CLOUD_PIPELINE_VERSION,
     PointCloudPipelineConfig,
     extract_vertebra_point_cloud,
-    write_point_cloud,
+    write_point_cloud_ply,
 )
 from spinelab.services import active_performance_policy, configure_runtime_policy
 
@@ -82,6 +84,8 @@ def run_point_cloud_stage(
 
     pc_dir = point_cloud_data_dir(store, manifest)
     pc_dir.mkdir(parents=True, exist_ok=True)
+    mesh_dir = point_cloud_mesh_dir(store, manifest)
+    mesh_dir.mkdir(parents=True, exist_ok=True)
 
     config = PointCloudPipelineConfig()
     policy = active_performance_policy()
@@ -177,26 +181,26 @@ def run_point_cloud_stage(
             manifest_entries.append(entry_payload)
             continue
 
-        point_cloud_path = pc_dir / f"{entry.vertebra_id}.npz"
+        point_cloud_path = pc_dir / f"{entry.vertebra_id}.ply"
+        mesh_ply_path = mesh_dir / f"{entry.vertebra_id}.ply"
         if result.points is None or result.normals is None:
             warnings.append(f"{entry.vertebra_id}: missing point cloud data")
             manifest_entries.append(entry_payload)
             continue
 
-        write_point_cloud(
+        write_point_cloud_ply(
             point_cloud_path,
             points=result.points,
             normals=result.normals,
-            vertebra_id=entry.vertebra_id,
-            structure_instance_id=entry.structure_instance_id,
-            standard_level_id=entry.standard_level_id,
-            display_label=entry.display_label,
-            coordinate_frame="surface-mesh",
         )
+
+        if result.mesh_polydata is not None:
+            write_polydata(mesh_ply_path, result.mesh_polydata)
 
         entry_payload.update(
             {
                 "point_cloud_path": str(point_cloud_path),
+                "mesh_path": str(mesh_ply_path),
                 "center_mm": [float(v) for v in result.center_mm]
                 if result.center_mm
                 else None,
@@ -212,6 +216,7 @@ def run_point_cloud_stage(
                     "display_label": entry.display_label,
                     "selection_key": entry.vertebra_id,
                     "pose_name": "baseline",
+                    "mesh_path": str(mesh_ply_path),
                     "center_mm": [float(v) for v in result.center_mm],
                     "extents_mm": [float(v) for v in result.extents_mm],
                 }
@@ -304,6 +309,7 @@ def run_point_cloud_stage(
             "algorithm": "vtk_surface_nets",
             "vertebra_count": str(complete_count),
             "point_cloud_dir": str(pc_dir),
+            "mesh_dir": str(mesh_dir),
             **backend_metadata,
         },
     )
@@ -351,6 +357,7 @@ def run_point_cloud_stage(
         outputs=[
             str(manifest_output),
             str(pc_dir),
+            str(mesh_dir),
             str(prepared_scene_output),
         ],
         artifacts=[
