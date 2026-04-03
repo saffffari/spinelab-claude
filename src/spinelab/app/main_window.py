@@ -151,7 +151,10 @@ class MainWindow(QMainWindow):
         self._publish_render_backend_state()
 
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        # WA_TranslucentBackground breaks VTK OpenGL child windows — the DWM
+        # compositor makes them transparent/click-through on Windows 11.
+        # Mica backdrop still works without it.
+        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowTitle("SpineLab 0.2")
         self.resize(1680, 1080)
 
@@ -513,7 +516,13 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Open Case", str(exc))
                 return
             old_session = self._active_session
-            self._set_active_session(session, manifest)
+            package_has_analysis = bool(manifest.artifacts or manifest.pipeline_runs)
+            self._set_active_session(
+                session,
+                manifest,
+                analysis_ready=package_has_analysis,
+                workspace_id="measurement" if package_has_analysis else "import",
+            )
             self._settings.add_recent_case_path(package_path)
             self._settings.save_last_case_directory(package_path.parent)
             import_page = self._workspace_pages.get("import")
